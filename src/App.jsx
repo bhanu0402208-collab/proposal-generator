@@ -16,23 +16,43 @@ function App() {
   // inputValue holds whatever the sales person is currently typing.
   const [inputValue, setInputValue] = useState("");
 
+  // isLoading lets us show a "thinking..." indicator while we wait for Gemini to respond.
+  const [isLoading, setIsLoading] = useState(false);
+
   // This function runs when the user clicks Send or presses Enter.
-  function handleSend() {
+  async function handleSend() {
     if (inputValue.trim() === "") return; // ignore empty messages
 
     // Add the user's message to the conversation.
     const newMessages = [...messages, { role: "user", text: inputValue }];
     setMessages(newMessages);
     setInputValue("");
+    setIsLoading(true);
 
-    // For now, we don't call any AI yet — just a placeholder reply,
-    // so we can confirm the chat UI works end-to-end before adding intelligence.
-    setTimeout(() => {
+    try {
+      // Call our own serverless function — not Gemini directly.
+      // The browser never sees the API key; this just sends the message to our backend.
+      const response = await fetch("/api/collect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: inputValue }),
+      });
+
+      const data = await response.json();
+
       setMessages((current) => [
         ...current,
-        { role: "assistant", text: "(AI response will go here)" },
+        { role: "assistant", text: data.reply || "Something went wrong — no reply received." },
       ]);
-    }, 500);
+    } catch (error) {
+      console.error("Error calling /api/collect:", error);
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", text: "Sorry, something went wrong connecting to the server." },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   // Allow pressing Enter to send, instead of only clicking the button.
@@ -59,6 +79,7 @@ function App() {
             {message.text}
           </div>
         ))}
+        {isLoading && <div className="message assistant-message thinking">Thinking...</div>}
       </div>
 
       <div className="chat-input-bar">
@@ -68,8 +89,9 @@ function App() {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your answer..."
+          disabled={isLoading}
         />
-        <button onClick={handleSend}>
+        <button onClick={handleSend} disabled={isLoading}>
           <Send size={18} />
         </button>
       </div>
