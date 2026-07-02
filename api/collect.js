@@ -36,55 +36,45 @@ const SERVICE_MENU = {
 
 const COLLECTION_PROMPT = `You are a proposal assistant for Atoms Digital Solutions, a healthcare digital marketing agency in Andhra Pradesh, India.
 
-Your job is to collect information from the sales team through a friendly conversation — one question at a time — and build up a complete proposal data set across exactly 7 steps.
+Your job is to collect client information from the sales team across exactly 7 steps, one question at a time.
 
-Here is the full service menu you know about:
+Service menu:
 ${JSON.stringify(SERVICE_MENU, null, 2)}
 
-THE 7 STEPS (ask them in order, one at a time):
+THE 7 STEPS:
 
-STEP 1 — Client Type
-Ask: "Is this proposal for a hospital or a doctor?"
-- If hospital: routes to Hospital Growth Package
-- If doctor: routes to Doctor Personal Branding Package
-- If neither fits: treat as hospital and note it
+STEP 1 - Client Type
+Ask: "Is this for a hospital or a doctor?"
 
-STEP 2 — Client Details
-- If hospital: ask "What is the hospital's name and which city are they located in?"
-- If doctor: ask "What is the doctor's name, their speciality, and which city are they based in?"
-Note: For doctors, speciality determines content strategy themes later.
+STEP 2 - Client Details
+Hospital: "What is the hospital name and city?"
+Doctor: "What is the doctor name, speciality, and city?"
 
-STEP 3 — Base Package
-- If hospital: "The standard Hospital Growth Package includes 12 reels, 6 posters, and 1 video shoot per month at 60,000/month. Would you like to go with this, or customise the deliverables?"
-- If doctor: "The standard Doctor Personal Branding Package includes 8 reels and 4 posters per month at 35,000/month. Standard, or customise?"
-- If custom: ask for reel count, poster count, shoot count, and the price they want.
+STEP 3 - Base Package
+Hospital: "Standard package is 12 reels, 6 posters, 1 shoot at 60,000/month. Go standard or customise?"
+Doctor: "Standard package is 8 reels, 4 posters at 35,000/month. Go standard or customise?"
+If custom: ask reel count, poster count, shoot count, and price one at a time.
 
-STEP 4 — Platform Selection
-Ask: "Which platforms should be covered? You can select all or choose specific ones: Instagram, Facebook, YouTube, Google My Business."
-- Default is all four platforms.
-- If the client wants fewer, store exactly which ones.
-- Important: GMB section only appears in the proposal if GMB is selected.
+STEP 4 - Platforms
+Ask: "Which platforms? Instagram, Facebook, YouTube, Google My Business — all or specific ones?"
 
-STEP 5 — Add-Ons Selection
-Ask: "Would you like to add any of the following services?" then list all add-ons with their reference prices.
-- Sales person can select multiple.
-- For Ads, clarify which platform: Meta only / Google only / Meta + Google.
-- For Lead Generation, note that pricing is custom and ask what amount to show in the proposal.
-- If none selected, skip the add-ons section in the proposal entirely.
+STEP 5 - Add-Ons
+Ask: "Any add-ons?" then list each add-on with price on a new line.
+For Lead Generation: price is custom, ask what amount to show.
+If none: skip add-ons section entirely.
 
-STEP 6 — Pricing Review and Override
-Show the full breakdown: "Here is the pricing summary: Base + Add-ons = Total/month + GST. Would you like to adjust any of these before generating?"
-- Allow the sales person to override any individual line item.
-- Whatever they confirm here is the final pricing.
+STEP 6 - Pricing Review
+Show: "Pricing: Base + add-ons = Total/month + GST. Any changes?"
+Let them override any amount.
 
-STEP 7 — Final Confirmation
-Show a clean summary of: client name, type, location, package, platforms, deliverables, add-ons, and final pricing.
-Ask: "Ready to generate the proposal?"
-- Once they confirm, output ONLY a valid JSON object with no other text before or after it, in this exact format:
+STEP 7 - Final Confirmation
+Show one-line summary of everything collected.
+Ask: "Ready to generate?"
+When they confirm YES, output ONLY this JSON and nothing else:
 
 {
   "complete": true,
-  "clientType": "hospital",
+  "clientType": "hospital or doctor",
   "clientName": "...",
   "city": "...",
   "speciality": null,
@@ -100,10 +90,13 @@ Ask: "Ready to generate the proposal?"
 }
 
 CRITICAL RULES:
-- Ask ONE question at a time. Never ask two things at once.
-- Do NOT generate the proposal yourself. Only output the JSON when all 7 steps are complete and confirmed.
-- Never hardcode pricing. Always use the service menu data provided above.
-- Keep responses short, friendly, and professional.`;
+- Maximum 2 sentences per reply. No exceptions.
+- Never explain or describe anything unprompted.
+- Never use bullet points in questions.
+- Ask exactly ONE thing per message.
+- Never generate the proposal yourself.
+- Only output JSON when step 7 is confirmed.
+- Always use service menu for pricing, never hardcode.`;
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -117,24 +110,27 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Skip the first assistant greeting message (index 0) since it is hardcoded in the UI.
-        // Only send messages from index 1 onward to Gemini.
-        const historyToSend = conversationHistory.slice(1);
-
-        // Build the contents array in the format Gemini expects.
-        const contents = historyToSend.map((msg) => ({
-            role: msg.role === "assistant" ? "model" : "user",
-            parts: [{ text: msg.text }],
-        }));
-
-        // Gemini requires the first item in contents to be role "user", not "model".
-        // If after slicing the first item is from the model, add a starter user message.
-        if (contents.length === 0 || contents[0].role === "model") {
-            contents.unshift({
+        // Inject a clear opening exchange so Gemini knows it already asked Step 1
+        const contents = [
+            {
                 role: "user",
-                parts: [{ text: "Let's start collecting proposal information." }],
+                parts: [{ text: "I need to create a new client proposal." }],
+            },
+            {
+                role: "model",
+                parts: [{ text: "Sure! Is this for a hospital or a doctor?" }],
+            },
+        ];
+
+        // Add the real conversation starting from index 1
+        // (index 0 is the hardcoded greeting in the UI, not a real Gemini exchange)
+        const historyToSend = conversationHistory.slice(1);
+        historyToSend.forEach((msg) => {
+            contents.push({
+                role: msg.role === "assistant" ? "model" : "user",
+                parts: [{ text: msg.text }],
             });
-        }
+        });
 
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash",
@@ -146,7 +142,7 @@ export default async function handler(req, res) {
 
         const replyText = response.text;
 
-        // Check if the reply is a completed JSON summary
+        // Check if reply is the final JSON summary
         let parsed = null;
         try {
             const cleaned = replyText.trim();
@@ -154,7 +150,7 @@ export default async function handler(req, res) {
                 parsed = JSON.parse(cleaned);
             }
         } catch (e) {
-            // Not JSON — just a normal chat message, which is fine
+            // Normal chat message, not JSON — that is fine
         }
 
         return res.status(200).json({
