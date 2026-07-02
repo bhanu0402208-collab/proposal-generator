@@ -34,44 +34,22 @@ const SERVICE_MENU = {
     ]
 };
 
-const COLLECTION_PROMPT = `You are a proposal assistant for Atoms Digital Solutions, a healthcare digital marketing agency in Andhra Pradesh, India.
-
-Your job is to collect client information from the sales team across exactly 7 steps, one question at a time.
+const COLLECTION_PROMPT = `You are a proposal assistant for Atoms Digital Solutions.
+You collect client info across 7 steps. One question per reply. Maximum 15 words per reply.
 
 Service menu:
 ${JSON.stringify(SERVICE_MENU, null, 2)}
 
-THE 7 STEPS:
+STEPS:
+1. Ask: "Hospital or doctor?"
+2. Hospital: "Hospital name and city?" / Doctor: "Doctor name, speciality, and city?"
+3. Hospital: "Standard: 12 reels, 6 posters, 1 shoot at Rs.60,000/month. Standard or custom?" / Doctor: "Standard: 8 reels, 4 posters at Rs.35,000/month. Standard or custom?"
+4. Ask: "Platforms: Instagram, Facebook, YouTube, GMB — all or specific?"
+5. Ask: "Any add-ons?" If yes, list each with price, one per line. Ask which they want.
+6. Show: "Total: Base + addons = X/month + GST. Any changes?"
+7. Show one-line summary. Ask: "Ready to generate?"
 
-STEP 1 - Client Type
-Ask: "Is this for a hospital or a doctor?"
-
-STEP 2 - Client Details
-Hospital: "What is the hospital name and city?"
-Doctor: "What is the doctor name, speciality, and city?"
-
-STEP 3 - Base Package
-Hospital: "Standard package is 12 reels, 6 posters, 1 shoot at 60,000/month. Go standard or customise?"
-Doctor: "Standard package is 8 reels, 4 posters at 35,000/month. Go standard or customise?"
-If custom: ask reel count, poster count, shoot count, and price one at a time.
-
-STEP 4 - Platforms
-Ask: "Which platforms? Instagram, Facebook, YouTube, Google My Business — all or specific ones?"
-
-STEP 5 - Add-Ons
-Ask: "Any add-ons?" then list each add-on with price on a new line.
-For Lead Generation: price is custom, ask what amount to show.
-If none: skip add-ons section entirely.
-
-STEP 6 - Pricing Review
-Show: "Pricing: Base + add-ons = Total/month + GST. Any changes?"
-Let them override any amount.
-
-STEP 7 - Final Confirmation
-Show one-line summary of everything collected.
-Ask: "Ready to generate?"
-When they confirm YES, output ONLY this JSON and nothing else:
-
+On confirmation at step 7, output ONLY this JSON, nothing else:
 {
   "complete": true,
   "clientType": "hospital or doctor",
@@ -89,14 +67,13 @@ When they confirm YES, output ONLY this JSON and nothing else:
   "currency": "INR"
 }
 
-CRITICAL RULES:
-- Maximum 2 sentences per reply. No exceptions.
-- Never explain or describe anything unprompted.
-- Never use bullet points in questions.
-- Ask exactly ONE thing per message.
-- Never generate the proposal yourself.
-- Only output JSON when step 7 is confirmed.
-- Always use service menu for pricing, never hardcode.`;
+RULES — NEVER BREAK THESE:
+1. Maximum 15 words per reply. Count your words before responding.
+2. One question per message only.
+3. No greetings, no pleasantries, no explanations.
+4. No bullet points in questions.
+5. Never generate the proposal — only output JSON at step 7.
+6. Never hardcode prices — use service menu above.`;
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -110,20 +87,17 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Inject a clear opening exchange so Gemini knows it already asked Step 1
         const contents = [
             {
                 role: "user",
-                parts: [{ text: "I need to create a new client proposal." }],
+                parts: [{ text: "Start a new proposal." }],
             },
             {
                 role: "model",
-                parts: [{ text: "Sure! Is this for a hospital or a doctor?" }],
+                parts: [{ text: "Hospital or doctor?" }],
             },
         ];
 
-        // Add the real conversation starting from index 1
-        // (index 0 is the hardcoded greeting in the UI, not a real Gemini exchange)
         const historyToSend = conversationHistory.slice(1);
         historyToSend.forEach((msg) => {
             contents.push({
@@ -142,7 +116,6 @@ export default async function handler(req, res) {
 
         const replyText = response.text;
 
-        // Check if reply is the final JSON summary
         let parsed = null;
         try {
             const cleaned = replyText.trim();
@@ -150,7 +123,7 @@ export default async function handler(req, res) {
                 parsed = JSON.parse(cleaned);
             }
         } catch (e) {
-            // Normal chat message, not JSON — that is fine
+            // Normal chat message
         }
 
         return res.status(200).json({
