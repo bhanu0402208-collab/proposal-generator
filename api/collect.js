@@ -106,13 +106,13 @@ export default async function handler(req, res) {
             });
         });
 
-        // Retry up to 3 times if Gemini returns 503 (overloaded)
+        // Retry up to 5 times if Gemini returns 503 (overloaded)
         let response;
         let attempts = 0;
-        while (attempts < 3) {
+        while (attempts < 5) {
             try {
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-1.5-flash",
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
@@ -121,11 +121,11 @@ export default async function handler(req, res) {
                 break; // Success - exit retry loop
             } catch (err) {
                 attempts++;
-                if (err.status === 503 && attempts < 3) {
-                    // Wait 2 seconds before retrying
-                    await new Promise((resolve) => setTimeout(resolve, 2000));
+                if (err.status === 503 && attempts < 5) {
+                    // Wait 3 seconds before retrying
+                    await new Promise((resolve) => setTimeout(resolve, 3000));
                 } else {
-                    throw err; // Give up after 3 attempts
+                    throw err; // Give up after 5 attempts
                 }
             }
         }
