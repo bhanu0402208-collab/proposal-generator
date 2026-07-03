@@ -26,7 +26,7 @@ function App() {
     setIsLoading(true);
 
     try {
-      // If a proposal is already generated, this is a refinement request
+      // If proposal already generated, treat this as a refinement request
       if (proposalHtml) {
         const response = await fetch("/api/generate", {
           method: "POST",
@@ -41,13 +41,13 @@ function App() {
           setProposalHtml(data.html);
           setMessages((current) => [
             ...current,
-            { role: "assistant", text: "Done! I've updated the proposal." },
+            { role: "assistant", text: "Done! Proposal updated." },
           ]);
         }
         return;
       }
 
-      // Otherwise, continue the collection conversation
+      // Otherwise continue the collection conversation
       const response = await fetch("/api/collect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -56,20 +56,29 @@ function App() {
 
       const data = await response.json();
 
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: data.reply },
-      ]);
-
+      // If Gemini returned completed JSON, show Generate button instead of raw JSON
       if (data.parsed?.complete === true) {
         setProposalData(data.parsed);
+        setMessages((current) => [
+          ...current,
+          {
+            role: "assistant",
+            text: "All details collected! Click Generate Proposal to create the document.",
+          },
+        ]);
+      } else {
+        // Normal conversation reply
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", text: data.reply },
+        ]);
       }
 
     } catch (error) {
       console.error("Error:", error);
       setMessages((current) => [
         ...current,
-        { role: "assistant", text: "Sorry, something went wrong." },
+        { role: "assistant", text: "Sorry, something went wrong. Please try again." },
       ]);
     } finally {
       setIsLoading(false);
@@ -95,12 +104,21 @@ function App() {
           ...current,
           {
             role: "assistant",
-            text: "Proposal generated! You can now review it on the right. Type any changes you want to make.",
+            text: "Proposal generated! Preview is on the right. Type any changes you want to make.",
           },
+        ]);
+      } else {
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", text: "Something went wrong generating the proposal. Please try again." },
         ]);
       }
     } catch (error) {
       console.error("Generate error:", error);
+      setMessages((current) => [
+        ...current,
+        { role: "assistant", text: "Failed to generate proposal. Please try again." },
+      ]);
     } finally {
       setIsGenerating(false);
     }
@@ -112,7 +130,7 @@ function App() {
 
   return (
     <div className="app-container">
-      {/* Left side — chat */}
+      {/* Left side - chat */}
       <div className="chat-panel">
         <header className="app-header">
           <h1>Atoms Proposal Generator</h1>
@@ -131,9 +149,13 @@ function App() {
               {message.text}
             </div>
           ))}
+
           {isLoading && (
-            <div className="message assistant-message thinking">Thinking...</div>
+            <div className="message assistant-message thinking">
+              Thinking...
+            </div>
           )}
+
           {proposalData && !proposalHtml && (
             <div className="generate-button-container">
               <button
@@ -153,7 +175,11 @@ function App() {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={proposalHtml ? "Type changes to refine..." : "Type your answer..."}
+            placeholder={
+              proposalHtml
+                ? "Type changes to refine..."
+                : "Type your answer..."
+            }
             disabled={isLoading}
           />
           <button onClick={handleSend} disabled={isLoading}>
@@ -162,7 +188,7 @@ function App() {
         </div>
       </div>
 
-      {/* Right side — proposal preview */}
+      {/* Right side - proposal preview */}
       {proposalHtml && (
         <div className="proposal-panel">
           <div className="proposal-toolbar">
