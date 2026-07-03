@@ -44,7 +44,7 @@ STEPS:
 1. Ask: "Hospital or doctor?"
 2. Hospital: "Hospital name and city?" / Doctor: "Doctor name, speciality, and city?"
 3. Hospital: "Standard: 12 reels, 6 posters, 1 shoot at Rs.60,000/month. Standard or custom?" / Doctor: "Standard: 8 reels, 4 posters at Rs.35,000/month. Standard or custom?"
-4. Ask: "Platforms: Instagram, Facebook, YouTube, GMB — all or specific?"
+4. Ask: "Platforms: Instagram, Facebook, YouTube, GMB - all or specific?"
 5. Ask: "Any add-ons?" If yes, list each with price, one per line. Ask which they want.
 6. Show: "Total: Base + addons = X/month + GST. Any changes?"
 7. Show one-line summary. Ask: "Ready to generate?"
@@ -67,13 +67,13 @@ On confirmation at step 7, output ONLY this JSON, nothing else:
   "currency": "INR"
 }
 
-RULES — NEVER BREAK THESE:
+RULES - NEVER BREAK THESE:
 1. Maximum 15 words per reply. Count your words before responding.
 2. One question per message only.
 3. No greetings, no pleasantries, no explanations.
 4. No bullet points in questions.
-5. Never generate the proposal — only output JSON at step 7.
-6. Never hardcode prices — use service menu above.`;
+5. Never generate the proposal - only output JSON at step 7.
+6. Never hardcode prices - use service menu above.`;
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -120,7 +120,9 @@ export default async function handler(req, res) {
         try {
             const cleaned = replyText.trim();
             if (cleaned.startsWith("{")) {
-                parsed = JSON.parse(cleaned);
+                const jsonStart = cleaned.indexOf("{");
+                const jsonEnd = cleaned.lastIndexOf("}") + 1;
+                parsed = JSON.parse(cleaned.substring(jsonStart, jsonEnd));
             }
         } catch (e) {
             // Normal chat message
