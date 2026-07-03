@@ -112,7 +112,7 @@ export default async function handler(req, res) {
         while (attempts < 5) {
             try {
                 response = await ai.models.generateContent({
-                    model: "gemini-1.5-flash",
+                    model: "gemini-1.5-flash-8b",
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
