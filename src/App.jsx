@@ -107,6 +107,19 @@ function App() {
 
       if (data.html) {
         setProposalHtml(data.html);
+
+        // Auto-save session to Supabase silently in background
+        fetch("/api/save-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            clientName: proposalData.clientName,
+            clientType: proposalData.clientType,
+            history: messages,
+            proposal: data.html,
+          }),
+        }).catch((err) => console.warn("Session save failed:", err));
+
         setMessages((current) => [
           ...current,
           {
@@ -128,8 +141,6 @@ function App() {
 
   return (
     <div className="app-container">
-
-      {/* Top header */}
       <header className="top-header">
         <div className="header-logo">
           <div className="logo-icon">⚛</div>
@@ -145,8 +156,6 @@ function App() {
       </header>
 
       <div className="main-content">
-
-        {/* Left panel - chat */}
         <div className="chat-panel">
           <div className="chat-panel-header">
             <span>Conversation</span>
@@ -157,8 +166,17 @@ function App() {
 
           <div className="chat-window">
             {messages.map((message, index) => (
-              <div key={index} className={message.role === "user" ? "message user-message" : "message assistant-message"}>
-                {message.role === "assistant" && <span className="msg-label">AI: </span>}
+              <div
+                key={index}
+                className={
+                  message.role === "user"
+                    ? "message user-message"
+                    : "message assistant-message"
+                }
+              >
+                {message.role === "assistant" && (
+                  <span className="msg-label">AI: </span>
+                )}
                 {message.text}
               </div>
             ))}
@@ -176,10 +194,18 @@ function App() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={proposalHtml ? "Type changes to refine..." : "Enter client details here..."}
+                placeholder={
+                  proposalHtml
+                    ? "Type changes to refine..."
+                    : "Enter client details here..."
+                }
                 disabled={isLoading}
               />
-              <button className="send-button" onClick={handleSend} disabled={isLoading}>
+              <button
+                className="send-button"
+                onClick={handleSend}
+                disabled={isLoading}
+              >
                 Send
               </button>
             </div>
@@ -193,7 +219,6 @@ function App() {
           </div>
         </div>
 
-        {/* Right panel - proposal preview */}
         <div className="proposal-panel">
           <div className="proposal-panel-header">
             <span>Proposal Preview</span>
@@ -222,7 +247,12 @@ function App() {
             <div className="proposal-empty">
               <FileText size={48} className="empty-icon" />
               <h2>Proposal Preview</h2>
-              <p>Chat with the AI assistant on the left to provide client details, then click <strong>"Generate Proposal Preview"</strong> to create your proposal.</p>
+              <p>
+                Chat with the AI assistant on the left to provide client
+                details, then click{" "}
+                <strong>"Generate Proposal Preview"</strong> to create your
+                proposal.
+              </p>
               <div className="steps">
                 <span className="step active">1. Chat</span>
                 <span className="arrow">→</span>
@@ -233,7 +263,6 @@ function App() {
             </div>
           )}
         </div>
-
       </div>
 
       <footer className="app-footer">
