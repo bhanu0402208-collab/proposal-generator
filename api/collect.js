@@ -1,6 +1,15 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Rotate through multiple API keys when one hits quota limit
+const API_KEYS = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+].filter(Boolean);
+
+function getAiClient(keyIndex = 0) {
+    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+}
 
 const SERVICE_MENU = {
     basePackages: {
@@ -100,7 +109,6 @@ export default async function handler(req, res) {
 
         const historyToSend = conversationHistory.slice(1);
         historyToSend.forEach((msg) => {
-            // Skip empty messages — Gemini rejects them with 400 error
             if (msg.text && msg.text.trim() !== "") {
                 contents.push({
                     role: msg.role === "assistant" ? "model" : "user",
@@ -109,11 +117,14 @@ export default async function handler(req, res) {
             }
         });
 
-        // Retry up to 5 times if Gemini returns 503 (overloaded)
+        // Rotate through API keys on 429 or 503 errors
         let response;
         let attempts = 0;
-        while (attempts < 5) {
+        const maxAttempts = API_KEYS.length * 2;
+
+        while (attempts < maxAttempts) {
             try {
+                const ai = getAiClient(attempts);
                 response = await ai.models.generateContent({
                     model: "gemini-3.5-flash",
                     contents: contents,
@@ -121,14 +132,13 @@ export default async function handler(req, res) {
                         systemInstruction: COLLECTION_PROMPT,
                     },
                 });
-                break; // Success - exit retry loop
+                break;
             } catch (err) {
                 attempts++;
-                if (err.status === 503 && attempts < 5) {
-                    // Wait 3 seconds before retrying
-                    await new Promise((resolve) => setTimeout(resolve, 3000));
+                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
                 } else {
-                    throw err; // Give up after 5 attempts
+                    throw err;
                 }
             }
         }

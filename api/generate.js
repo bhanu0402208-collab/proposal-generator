@@ -1,8 +1,16 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Rotate through multiple API keys when one hits quota limit
+const API_KEYS = [
+    process.env.GEMINI_API_KEY,
+    process.env.GEMINI_API_KEY_2,
+    process.env.GEMINI_API_KEY_3,
+].filter(Boolean);
 
-// FIXED SECTIONS — these appear verbatim in every proposal, never rewritten.
+function getAiClient(keyIndex = 0) {
+    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+}
+
 const FIXED_HEADER = `Atoms Digital Solutions Private Limited
 CIN: U74999AP2022PTC133342
 Email: atomsdigitalsolutions@gmail.com | Phone: +91 98765 43210
@@ -40,19 +48,19 @@ You will receive a JSON object with all the client details collected during the 
 Your job is to generate a complete, professional proposal document in clean HTML.
 
 THE PROPOSAL MUST FOLLOW THIS EXACT SECTION ORDER:
-1. Header (FIXED — use verbatim, never rewrite)
-2. Client Title Block (VARIABLE — fill from JSON data)
-3. Overview / Understanding Your Requirement (CUSTOMISABLE — write 2-3 paragraphs based on client type, speciality, location)
-4. Objectives of Digital Marketing (FIXED — use verbatim, never rewrite)
-5. Recommended Service Scope (CUSTOMISABLE — one sub-section per selected service only)
-6. Monthly Deliverables (VARIABLE — only if social media selected, show exact counts from JSON)
-7. Content Strategy (CUSTOMISABLE — only if social media selected, tailor to speciality/hospital type)
-8. Optional Add-Ons (CUSTOMISABLE — only if add-ons were selected, list them)
-9. Pricing (VARIABLE — use exact figures from JSON, never change them)
-10. Important Notes (FIXED — use verbatim, never rewrite)
-11. Why Atoms (FIXED — use verbatim, never rewrite)
-12. Conclusion / Next Steps (CUSTOMISABLE — 2-3 sentences, personalised to client name)
-13. Footer (FIXED — use verbatim, never rewrite)
+1. Header (FIXED - use verbatim, never rewrite)
+2. Client Title Block (VARIABLE - fill from JSON data)
+3. Overview / Understanding Your Requirement (CUSTOMISABLE - write 2-3 paragraphs based on client type, speciality, location)
+4. Objectives of Digital Marketing (FIXED - use verbatim, never rewrite)
+5. Recommended Service Scope (CUSTOMISABLE - one sub-section per selected service only)
+6. Monthly Deliverables (VARIABLE - only if social media selected, show exact counts from JSON)
+7. Content Strategy (CUSTOMISABLE - only if social media selected, tailor to speciality/hospital type)
+8. Optional Add-Ons (CUSTOMISABLE - only if add-ons were selected, list them)
+9. Pricing (VARIABLE - use exact figures from JSON, never change them)
+10. Important Notes (FIXED - use verbatim, never rewrite)
+11. Why Atoms (FIXED - use verbatim, never rewrite)
+12. Conclusion / Next Steps (CUSTOMISABLE - 2-3 sentences, personalised to client name)
+13. Footer (FIXED - use verbatim, never rewrite)
 
 FIXED SECTIONS (copy these word for word, do not change a single character):
 
@@ -94,25 +102,38 @@ export default async function handler(req, res) {
         let prompt;
 
         if (refinementInstruction && currentHtml) {
-            // This is a refinement request — user wants to edit the existing proposal
             prompt = `Here is the current proposal HTML:\n\n${currentHtml}\n\nUser instruction: ${refinementInstruction}\n\nApply the change and output the complete updated HTML only.`;
         } else {
-            // This is a fresh generation request
             prompt = `Generate a complete proposal for this client:\n\n${JSON.stringify(proposalData, null, 2)}\n\nFollow the section order and rules exactly. Output HTML only.`;
         }
 
-        const response = await ai.models.generateContent({
-            model: "gemini-3.5-flash",
-            contents: prompt,
-            config: {
-                systemInstruction: GENERATION_PROMPT,
-                temperature: 0.3,
-            },
-        });
+        let response;
+        let attempts = 0;
+        const maxAttempts = API_KEYS.length * 2;
+
+        while (attempts < maxAttempts) {
+            try {
+                const ai = getAiClient(attempts);
+                response = await ai.models.generateContent({
+                    model: "gemini-3.5-flash",
+                    contents: prompt,
+                    config: {
+                        systemInstruction: GENERATION_PROMPT,
+                        temperature: 0.3,
+                    },
+                });
+                break;
+            } catch (err) {
+                attempts++;
+                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                } else {
+                    throw err;
+                }
+            }
+        }
 
         let html = response.text;
-
-        // Strip markdown code fences if AI wrapped the output
         html = html.replace(/^```html\n?/, "").replace(/\n?```$/, "").trim();
         html = html.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
 
