@@ -100,10 +100,13 @@ export default async function handler(req, res) {
 
         const historyToSend = conversationHistory.slice(1);
         historyToSend.forEach((msg) => {
-            contents.push({
-                role: msg.role === "assistant" ? "model" : "user",
-                parts: [{ text: msg.text }],
-            });
+            // Skip empty messages — Gemini rejects them with 400 error
+            if (msg.text && msg.text.trim() !== "") {
+                contents.push({
+                    role: msg.role === "assistant" ? "model" : "user",
+                    parts: [{ text: msg.text.trim() }],
+                });
+            }
         });
 
         // Retry up to 5 times if Gemini returns 503 (overloaded)
