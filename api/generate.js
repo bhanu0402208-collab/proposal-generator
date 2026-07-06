@@ -1,6 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
 
-// Rotate through multiple API keys when one hits quota limit
 const API_KEYS = [
     process.env.GEMINI_API_KEY,
     process.env.GEMINI_API_KEY_2,
@@ -42,27 +41,32 @@ const FIXED_WHY_ATOMS = `WHY ATOMS DIGITAL SOLUTIONS?
 - Dedicated content team with medical communication expertise
 - Transparent reporting and consistent communication`;
 
-const GENERATION_PROMPT = `You are a proposal writer for Atoms Digital Solutions, a healthcare digital marketing agency.
+const GENERATION_PROMPT = `You are a proposal writer for Atoms Digital Solutions.
 
-You will receive a JSON object with all the client details collected during the sales conversation.
-Your job is to generate a complete, professional proposal document in clean HTML.
+Generate a complete professional proposal as a SINGLE clean HTML document.
 
-THE PROPOSAL MUST FOLLOW THIS EXACT SECTION ORDER:
-1. Header (FIXED - use verbatim, never rewrite)
-2. Client Title Block (VARIABLE - fill from JSON data)
-3. Overview / Understanding Your Requirement (CUSTOMISABLE - write 2-3 paragraphs based on client type, speciality, location)
-4. Objectives of Digital Marketing (FIXED - use verbatim, never rewrite)
-5. Recommended Service Scope (CUSTOMISABLE - one sub-section per selected service only)
-6. Monthly Deliverables (VARIABLE - only if social media selected, show exact counts from JSON)
-7. Content Strategy (CUSTOMISABLE - only if social media selected, tailor to speciality/hospital type)
-8. Optional Add-Ons (CUSTOMISABLE - only if add-ons were selected, list them)
-9. Pricing (VARIABLE - use exact figures from JSON, never change them)
-10. Important Notes (FIXED - use verbatim, never rewrite)
-11. Why Atoms (FIXED - use verbatim, never rewrite)
-12. Conclusion / Next Steps (CUSTOMISABLE - 2-3 sentences, personalised to client name)
-13. Footer (FIXED - use verbatim, never rewrite)
+CRITICAL OUTPUT RULES:
+- Output RAW HTML only. Start with <!DOCTYPE html> or <html>.
+- NO markdown. NO backticks. NO code fences. NO explanation text.
+- NO text before or after the HTML. Just the HTML document.
+- The HTML must be complete and self-contained with all styles inline.
 
-FIXED SECTIONS (copy these word for word, do not change a single character):
+SECTION ORDER (include all in this exact order):
+1. Header — use FIXED text verbatim
+2. Client Title Block — client name, city, package name, date
+3. Understanding Your Requirement — 2-3 paragraphs, specific to client type/location/speciality
+4. Objectives of Digital Marketing — use FIXED text verbatim
+5. Recommended Service Scope — one sub-section per selected service only
+6. Monthly Deliverables — only if social media selected, exact counts from JSON
+7. Content Strategy — only if social media selected, tailored to speciality/hospital type
+8. Add-Ons — only if add-ons selected, list them with prices
+9. Pricing Table — show base, add-ons, subtotal, GST (18%), total. Use EXACT figures from JSON
+10. Important Notes — use FIXED text verbatim
+11. Why Atoms Digital Solutions — use FIXED text verbatim
+12. Conclusion — 2-3 sentences personalised to client name
+13. Footer — use FIXED text verbatim
+
+FIXED SECTIONS (copy EXACTLY, word for word):
 
 HEADER:
 ${FIXED_HEADER}
@@ -79,13 +83,14 @@ ${FIXED_WHY_ATOMS}
 FOOTER:
 ${FIXED_FOOTER}
 
-HTML FORMATTING RULES:
-- Output clean HTML only. No markdown, no backticks, no explanation text.
-- Use inline styles for formatting. Keep it clean and printable.
-- Use a white background, dark text, professional font (Arial or similar).
-- Each section should have a clear heading.
-- Pricing should be displayed as a clear table.
-- The document should look professional enough to send directly to a client.`;
+STYLING RULES:
+- White background, dark text (#1a1a1a), font: Arial
+- Page padding: 40px
+- Company name in dark blue (#1e3a8a), bold, large
+- Section headings in dark blue, uppercase, with bottom border
+- Pricing in a clean table with borders
+- Professional enough to send directly to a client
+- Print-friendly (no backgrounds on sections)`;
 
 export default async function handler(req, res) {
     if (req.method !== "POST") {
@@ -102,9 +107,9 @@ export default async function handler(req, res) {
         let prompt;
 
         if (refinementInstruction && currentHtml) {
-            prompt = `Here is the current proposal HTML:\n\n${currentHtml}\n\nUser instruction: ${refinementInstruction}\n\nApply the change and output the complete updated HTML only.`;
+            prompt = `Current proposal HTML:\n\n${currentHtml}\n\nInstruction: ${refinementInstruction}\n\nOutput the complete updated HTML only. No explanation, no markdown, just raw HTML starting with <!DOCTYPE html>.`;
         } else {
-            prompt = `Generate a complete proposal for this client:\n\n${JSON.stringify(proposalData, null, 2)}\n\nFollow the section order and rules exactly. Output HTML only.`;
+            prompt = `Generate a complete proposal for this client:\n\n${JSON.stringify(proposalData, null, 2)}\n\nOutput raw HTML only. Start with <!DOCTYPE html>. No markdown, no backticks, no explanation.`;
         }
 
         let response;
@@ -119,7 +124,7 @@ export default async function handler(req, res) {
                     contents: prompt,
                     config: {
                         systemInstruction: GENERATION_PROMPT,
-                        temperature: 0.3,
+                        temperature: 0.2,
                     },
                 });
                 break;
@@ -134,8 +139,18 @@ export default async function handler(req, res) {
         }
 
         let html = response.text;
-        html = html.replace(/^```html\n?/, "").replace(/\n?```$/, "").trim();
-        html = html.replace(/^```\n?/, "").replace(/\n?```$/, "").trim();
+
+        // Strip any markdown code fences if AI added them
+        html = html.replace(/^```html\s*/i, "").replace(/\s*```$/i, "").trim();
+        html = html.replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+
+        // Strip any text before the HTML tag
+        const htmlStart = html.indexOf("<!DOCTYPE") !== -1
+            ? html.indexOf("<!DOCTYPE")
+            : html.indexOf("<html");
+        if (htmlStart > 0) {
+            html = html.substring(htmlStart);
+        }
 
         return res.status(200).json({ html });
 
