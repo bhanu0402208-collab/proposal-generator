@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Send, Plus, FileText } from "lucide-react";
+import { Send, Plus, FileText, Sparkles } from "lucide-react";
 import "./App.css";
 
 function App() {
@@ -52,7 +52,7 @@ function App() {
           setProposalHtml(data.html);
           setMessages((current) => [
             ...current,
-            { role: "assistant", text: "Done! Proposal updated." },
+            { role: "assistant", text: "Done! Proposal updated successfully." },
           ]);
         }
         return;
@@ -108,7 +108,6 @@ function App() {
       if (data.html) {
         setProposalHtml(data.html);
 
-        // Auto-save session to Supabase silently in background
         fetch("/api/save-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -124,7 +123,7 @@ function App() {
           ...current,
           {
             role: "assistant",
-            text: "Proposal generated! You can see the preview on the right. Type any changes you want to make.",
+            text: "Proposal generated! Preview is on the right. Type any changes you want to make.",
           },
         ]);
       }
@@ -136,7 +135,16 @@ function App() {
   }
 
   function handleKeyDown(e) {
-    if (e.key === "Enter") handleSend();
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
+  function handleTextareaChange(e) {
+    setInputValue(e.target.value);
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
   }
 
   return (
@@ -152,6 +160,10 @@ function App() {
         <div className="header-title">
           <h1>Proposal Generator Agent</h1>
           <p>AI-powered proposal assistant for Atoms Digital Solutions</p>
+        </div>
+        <div className="header-badge">
+          <Sparkles size={14} />
+          <span>AI Powered</span>
         </div>
       </header>
 
@@ -175,38 +187,41 @@ function App() {
                 }
               >
                 {message.role === "assistant" && (
-                  <span className="msg-label">AI: </span>
+                  <span className="msg-label">AI </span>
                 )}
                 {message.text}
               </div>
             ))}
             {isLoading && (
-              <div className="message assistant-message">
-                <span className="msg-label">AI: </span>Thinking...
+              <div className="message assistant-message loading-message">
+                <span className="msg-label">AI </span>
+                <span className="dot">●</span>
+                <span className="dot">●</span>
+                <span className="dot">●</span>
               </div>
             )}
           </div>
 
           <div className="chat-input-area">
             <div className="chat-input-bar">
-              <input
-                type="text"
+              <textarea
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
+                onChange={handleTextareaChange}
                 onKeyDown={handleKeyDown}
                 placeholder={
                   proposalHtml
-                    ? "Type changes to refine..."
-                    : "Enter client details here..."
+                    ? "Type changes to refine the proposal..."
+                    : "Type your answer here... (Enter to send)"
                 }
                 disabled={isLoading}
+                rows={1}
               />
               <button
                 className="send-button"
                 onClick={handleSend}
-                disabled={isLoading}
+                disabled={isLoading || inputValue.trim() === ""}
               >
-                Send
+                <Send size={16} />
               </button>
             </div>
             <button
@@ -214,7 +229,15 @@ function App() {
               onClick={handleGenerate}
               disabled={!proposalData || isGenerating}
             >
-              {isGenerating ? "Generating..." : "Generate Proposal Preview"}
+              {isGenerating ? (
+                <>
+                  <span className="spinner" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={16} /> Generate Proposal Preview
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -232,7 +255,7 @@ function App() {
                   win.print();
                 }}
               >
-                Print / Save PDF
+                🖨 Print / Save PDF
               </button>
             )}
           </div>
@@ -245,20 +268,29 @@ function App() {
             />
           ) : (
             <div className="proposal-empty">
-              <FileText size={48} className="empty-icon" />
+              <div className="empty-icon-wrap">
+                <FileText size={40} />
+              </div>
               <h2>Proposal Preview</h2>
               <p>
-                Chat with the AI assistant on the left to provide client
-                details, then click{" "}
-                <strong>"Generate Proposal Preview"</strong> to create your
-                proposal.
+                Chat with the AI on the left, then click{" "}
+                <strong>"Generate Proposal Preview"</strong> to create your document.
               </p>
               <div className="steps">
-                <span className="step active">1. Chat</span>
+                <div className="step active">
+                  <span className="step-num">1</span>
+                  <span>Chat</span>
+                </div>
                 <span className="arrow">→</span>
-                <span className="step">2. Confirm</span>
+                <div className="step">
+                  <span className="step-num">2</span>
+                  <span>Confirm</span>
+                </div>
                 <span className="arrow">→</span>
-                <span className="step">3. Generate</span>
+                <div className="step">
+                  <span className="step-num">3</span>
+                  <span>Generate</span>
+                </div>
               </div>
             </div>
           )}
