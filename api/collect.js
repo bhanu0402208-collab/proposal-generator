@@ -169,7 +169,7 @@ export default async function handler(req, res) {
             try {
                 const ai = getAiClient(attempts);
                 response = await ai.models.generateContent({
-                    model: "gemini-3.5-flash",
+                    model: "gemini-2.5-flash",
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
