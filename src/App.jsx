@@ -6,7 +6,26 @@ function App() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Hi! I am the Proposal Generator Agent. I will help you collect client details and generate a proposal.\n\nIs this proposal for a hospital or a doctor?",
+      text: `Hi! I am the Proposal Generator Agent. I will help you create a professional digital marketing proposal for Atoms Digital Solutions.
+
+You can either fill in the details below all at once, or I'll guide you step by step.
+
+To fill all at once, copy and paste this format:
+
+Client Type: Hospital / Doctor
+Client Name: 
+City: 
+Speciality (if Doctor): 
+Package: Standard / Custom
+Reels (if custom): 
+Posters (if custom): 
+Shoots (if custom): 
+Base Price (if custom): 
+Platforms: All / Instagram / Facebook / YouTube / GMB
+Add-Ons: (list from menu or 'none')
+Total Price Override: (optional)
+
+Or just type "start" and I'll guide you step by step!`,
     },
   ]);
 
