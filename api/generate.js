@@ -128,7 +128,8 @@ STYLING RULES:
 - White background (#ffffff), dark text (#1a1a1a), font: Arial, line-height: 1.6
 - Page padding: 40px, max-width: 800px, margin: auto
 - Company name: dark blue (#1e3a8a), bold, 22px
-- Section headings: dark blue (#1e3a8a), uppercase, 13px letter-spacing, border-bottom: 2px solid #1e3a8a, padding-bottom: 6px, margin-top: 32px
+- Section headings: dark blue (#1e3a8a), uppercase, letter-spacing: 1px (NOT more), font-size: 14px, font-weight: bold, border-bottom: 2px solid #1e3a8a, padding-bottom: 6px, margin-top: 32px
+- Pricing numbers: always format with Indian Rupee symbol ₹ and comma separators (e.g. ₹60,000 not 60000)
 - Tables: full width, border-collapse collapse, 1px solid #e5e7eb borders, 10px cell padding
 - Table headers: background #1e3a8a, white text
 - Alternating table rows: #f8fafc for even rows
