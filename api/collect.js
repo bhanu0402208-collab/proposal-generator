@@ -194,10 +194,15 @@ export default async function handler(req, res) {
 
         let parsed = null;
         try {
-            const cleaned = replyText.trim();
-            if (cleaned.startsWith("{")) {
-                const jsonStart = cleaned.indexOf("{");
-                const jsonEnd = cleaned.lastIndexOf("}") + 1;
+            // Strip markdown code fences if AI wrapped the JSON
+            let cleaned = replyText.trim();
+            cleaned = cleaned.replace(/^```json\s*/i, "").replace(/\s*```$/i, "").trim();
+            cleaned = cleaned.replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+
+            // Find the JSON object
+            const jsonStart = cleaned.indexOf("{");
+            const jsonEnd = cleaned.lastIndexOf("}") + 1;
+            if (jsonStart !== -1 && jsonEnd > jsonStart) {
                 parsed = JSON.parse(cleaned.substring(jsonStart, jsonEnd));
             }
         } catch (e) {
