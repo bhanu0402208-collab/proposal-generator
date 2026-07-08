@@ -82,7 +82,7 @@ WRITING RULES:
 
 SECTION ORDER (include ALL in this exact order):
 1. Header — FIXED text verbatim
-2. Client Title Block — client name, city, package name, today's date
+2. Client Title Block — client name, city, package name, and today's date which is ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}
 3. Understanding Your Requirement — 2 SHORT paragraphs specific to client/location/speciality. No generic statements.
 4. Objectives of Digital Marketing — FIXED text verbatim
 5. Recommended Service Scope — one sub-section per selected service. Use bullet points for "What We Do" and "Expected Results". No long paragraphs.
