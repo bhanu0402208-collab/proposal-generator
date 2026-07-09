@@ -1,12 +1,10 @@
-import { useState } from "react";
-import { Send, Plus, FileText, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Send, Plus, FileText, Sparkles, History, X } from "lucide-react";
 import "./App.css";
 
-function App() {
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: `Hi! I am the Proposal Generator Agent. I will help you create a professional digital marketing proposal for Atoms Digital Solutions.
+const INITIAL_MESSAGE = {
+  role: "assistant",
+  text: `Hi! I am the Proposal Generator Agent. I will help you create a professional digital marketing proposal for Atoms Digital Solutions.
 
 You can either fill in the details below all at once, or I'll guide you step by step.
 
@@ -17,31 +15,56 @@ Client Name:
 City: 
 Speciality (if Doctor): 
 Package: Standard / Custom
-Reels (if custom): 
-Posters (if custom): 
-Shoots (if custom): 
-Base Price (if custom): 
 Platforms: All / Instagram / Facebook / YouTube / GMB
 Add-Ons: (list from menu or 'none')
-Total Price Override: (optional)
 
 Or just type "start" and I'll guide you step by step!`,
-    },
-  ]);
+};
 
+function App() {
+  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [proposalData, setProposalData] = useState(null);
   const [proposalHtml, setProposalHtml] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [sessions, setSessions] = useState([]);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [loadingSessions, setLoadingSessions] = useState(false);
 
-  function handleNew() {
+  async function fetchSessions() {
+    setLoadingSessions(true);
+    try {
+      const response = await fetch("/api/get-sessions");
+      const data = await response.json();
+      setSessions(data.sessions || []);
+    } catch (error) {
+      console.error("Failed to fetch sessions:", error);
+    } finally {
+      setLoadingSessions(false);
+    }
+  }
+
+  function handleOpenHistory() {
+    setShowSidebar(true);
+    fetchSessions();
+  }
+
+  function handleLoadSession(session) {
+    setProposalHtml(session.final_proposal);
+    setProposalData(null);
     setMessages([
+      INITIAL_MESSAGE,
       {
         role: "assistant",
-        text: "Hi! I am the Proposal Generator Agent. I will help you collect client details and generate a proposal.\n\nIs this proposal for a hospital or a doctor?",
+        text: `Loaded proposal for ${session.client_name} (${session.client_type}). You can see it on the right. Type any changes to refine it.`,
       },
     ]);
+    setShowSidebar(false);
+  }
+
+  function handleNew() {
+    setMessages([INITIAL_MESSAGE]);
     setInputValue("");
     setProposalData(null);
     setProposalHtml(null);
@@ -166,6 +189,15 @@ Or just type "start" and I'll guide you step by step!`,
     e.target.style.height = Math.min(e.target.scrollHeight, 150) + "px";
   }
 
+  function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+
   return (
     <div className="app-container">
       <header className="top-header">
@@ -180,13 +212,51 @@ Or just type "start" and I'll guide you step by step!`,
           <h1>Proposal Generator Agent</h1>
           <p>AI-powered proposal assistant for Atoms Digital Solutions</p>
         </div>
-        <div className="header-badge">
-          <Sparkles size={14} />
-          <span>AI Powered</span>
+        <div className="header-actions">
+          <button className="history-button" onClick={handleOpenHistory}>
+            <History size={16} /> History
+          </button>
+          <div className="header-badge">
+            <Sparkles size={14} />
+            <span>AI Powered</span>
+          </div>
         </div>
       </header>
 
       <div className="main-content">
+        {/* History Sidebar */}
+        {showSidebar && (
+          <div className="history-sidebar">
+            <div className="sidebar-header">
+              <span>Past Proposals</span>
+              <button className="close-sidebar" onClick={() => setShowSidebar(false)}>
+                <X size={16} />
+              </button>
+            </div>
+            <div className="sidebar-content">
+              {loadingSessions ? (
+                <div className="sidebar-loading">Loading...</div>
+              ) : sessions.length === 0 ? (
+                <div className="sidebar-empty">No past proposals yet.</div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="session-item"
+                    onClick={() => handleLoadSession(session)}
+                  >
+                    <div className="session-name">{session.client_name}</div>
+                    <div className="session-meta">
+                      {session.client_type} · {formatDate(session.created_at)}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Chat panel */}
         <div className="chat-panel">
           <div className="chat-panel-header">
             <span>Conversation</span>
@@ -249,18 +319,15 @@ Or just type "start" and I'll guide you step by step!`,
               disabled={!proposalData || isGenerating}
             >
               {isGenerating ? (
-                <>
-                  <span className="spinner" /> Generating...
-                </>
+                <><span className="spinner" /> Generating...</>
               ) : (
-                <>
-                  <Sparkles size={16} /> Generate Proposal Preview
-                </>
+                <><Sparkles size={16} /> Generate Proposal Preview</>
               )}
             </button>
           </div>
         </div>
 
+        {/* Proposal panel */}
         <div className="proposal-panel">
           <div className="proposal-panel-header">
             <span>Proposal Preview</span>
