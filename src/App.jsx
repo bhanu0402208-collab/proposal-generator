@@ -32,6 +32,8 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
+  const [sessionId, setSessionId] = useState(() => Math.random().toString(36).substring(2, 15));
+  const [clientInfo, setClientInfo] = useState({ name: "Unknown", type: "Unknown" });
 
   async function fetchSessions() {
     setLoadingSessions(true);
@@ -54,13 +56,19 @@ function App() {
   function handleLoadSession(session) {
     setProposalHtml(session.final_proposal);
     setProposalData(null);
-    setMessages([
-      INITIAL_MESSAGE,
-      {
-        role: "assistant",
-        text: `Loaded proposal for ${session.client_name} (${session.client_type}). You can see it on the right. Type any changes to refine it.`,
-      },
-    ]);
+    setSessionId(session.id);
+    setClientInfo({ name: session.client_name, type: session.client_type });
+    if (session.conversation_history && session.conversation_history.length > 0) {
+      setMessages(session.conversation_history);
+    } else {
+      setMessages([
+        INITIAL_MESSAGE,
+        {
+          role: "assistant",
+          text: `Loaded proposal for ${session.client_name} (${session.client_type}). You can see it on the right. Type any changes to refine it.`,
+        },
+      ]);
+    }
     setShowSidebar(false);
   }
 
@@ -69,6 +77,8 @@ function App() {
     setInputValue("");
     setProposalData(null);
     setProposalHtml(null);
+    setSessionId(Math.random().toString(36).substring(2, 15));
+    setClientInfo({ name: "Unknown", type: "Unknown" });
   }
 
   async function handleSend() {
@@ -93,10 +103,23 @@ function App() {
         const data = await response.json();
         if (data.html) {
           setProposalHtml(data.html);
-          setMessages((current) => [
-            ...current,
+          const updatedMessages = [
+            ...newMessages,
             { role: "assistant", text: "Done! Proposal updated successfully." },
-          ]);
+          ];
+          setMessages(updatedMessages);
+          
+          fetch("/api/save-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: sessionId,
+              clientName: clientInfo.name,
+              clientType: clientInfo.type,
+              history: updatedMessages,
+              proposal: data.html,
+            }),
+          }).catch((err) => console.warn("Session save failed:", err));
         }
         return;
       }
@@ -111,6 +134,7 @@ function App() {
 
       if (data.parsed?.complete === true) {
         setProposalData(data.parsed);
+        setClientInfo({ name: data.parsed.clientName, type: data.parsed.clientType });
         setMessages((current) => [
           ...current,
           {
@@ -155,6 +179,7 @@ function App() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            id: sessionId,
             clientName: proposalData.clientName,
             clientType: proposalData.clientType,
             history: messages,

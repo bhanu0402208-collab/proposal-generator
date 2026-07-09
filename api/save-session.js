@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     if (req.method !== "POST") {
         return res.status(405).json({ error: "Method not allowed" });
     }
-    const { clientName, clientType, history, proposal } = req.body;
+    const { id, clientName, clientType, history, proposal } = req.body;
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
     if (!supabaseUrl || !supabaseKey) {
@@ -13,16 +13,21 @@ export default async function handler(req, res) {
     }
     try {
         const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        const sessionData = {
+            client_name: clientName || "Unknown",
+            client_type: clientType || "Unknown",
+            conversation_history: history,
+            final_proposal: proposal
+        };
+        
+        if (id) {
+            sessionData.id = id;
+        }
+
         const { error } = await supabase
             .from('sessions')
-            .insert([
-                {
-                    client_name: clientName || "Unknown",
-                    client_type: clientType || "Unknown",
-                    conversation_history: history,
-                    final_proposal: proposal
-                }
-            ]);
+            .upsert([sessionData]);
         if (error) {
             console.error("Supabase insert error:", error);
             // Silent to user, log internally
