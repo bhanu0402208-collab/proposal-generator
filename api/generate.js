@@ -7,7 +7,10 @@ const API_KEYS = [
 ].filter(Boolean);
 
 function getAiClient(keyIndex = 0) {
-    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+    return new GoogleGenAI({ 
+        apiKey: API_KEYS[keyIndex % API_KEYS.length],
+        httpOptions: { apiVersion: 'v1' }
+    });
 }
 
 const FIXED_HEADER = `Atoms Digital Solutions Private Limited
@@ -163,7 +166,7 @@ export default async function handler(req, res) {
             try {
                 const ai = getAiClient(attempts);
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-1.5-flash",
                     contents: prompt,
                     config: {
                         systemInstruction: GENERATION_PROMPT,
