@@ -31,6 +31,7 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [showGreeting, setShowGreeting] = useState(true);
 
   async function fetchSessions() {
     setLoadingSessions(true);
@@ -199,8 +200,21 @@ function App() {
   }
 
   return (
-    <div className="app-container">
-      <header className="top-header">
+    <>
+      {showGreeting && (
+        <div className="greeting-overlay">
+          <div className="greeting-card">
+            <div className="greeting-icon">✨</div>
+            <h2>Welcome to Atoms</h2>
+            <p>Your AI-powered Proposal Generator Agent</p>
+            <button className="greeting-button" onClick={() => setShowGreeting(false)}>
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
+      <div className={`app-container ${showGreeting ? 'blurred' : ''}`}>
+        <header className="top-header">
         <div className="header-logo">
           <div className="logo-icon">⚛</div>
           <div className="logo-text">
@@ -387,6 +401,7 @@ function App() {
         © 2026 All rights reserved | ⚛ Atoms Digital Solutions
       </footer>
     </div>
+    </>
   );
 }
 
