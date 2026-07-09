@@ -132,6 +132,14 @@ function App() {
 
       const data = await response.json();
 
+      if (data.error) {
+        setMessages((current) => [
+          ...current,
+          { role: "assistant", text: "API Error: " + data.error },
+        ]);
+        return;
+      }
+
       if (data.parsed?.complete === true) {
         setProposalData(data.parsed);
         setClientInfo({ name: data.parsed.clientName, type: data.parsed.clientType });

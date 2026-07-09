@@ -168,6 +168,7 @@ export default async function handler(req, res) {
                     config: {
                         systemInstruction: GENERATION_PROMPT,
                         temperature: 0.2,
+                        maxOutputTokens: 8192,
                     },
                 });
                 break;
@@ -199,6 +200,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Gemini generate error:", error);
-        return res.status(500).json({ error: "Failed to generate proposal." });
+        return res.status(500).json({ error: error.message || "Failed to generate proposal." });
     }
 }

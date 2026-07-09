@@ -177,6 +177,7 @@ export default async function handler(req, res) {
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
+                        maxOutputTokens: 8192,
                     },
                 });
                 break;
@@ -216,6 +217,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Gemini API error:", error);
-        return res.status(500).json({ error: "Failed to get response from Gemini." });
+        return res.status(500).json({ error: error.message || "Failed to get response from Gemini." });
     }
 }
