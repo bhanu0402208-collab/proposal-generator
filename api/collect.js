@@ -7,7 +7,10 @@ const API_KEYS = [
 ].filter(Boolean);
 
 function getAiClient(keyIndex = 0) {
-    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+    return new GoogleGenAI({ 
+        apiKey: API_KEYS[keyIndex % API_KEYS.length],
+        httpOptions: { apiVersion: 'v1' }
+    });
 }
 
 const SERVICE_MENU = {
@@ -173,10 +176,11 @@ export default async function handler(req, res) {
             try {
                 const ai = getAiClient(attempts);
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-1.5-flash",
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
+                        maxOutputTokens: 8192,
                     },
                 });
                 break;
@@ -216,6 +220,6 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Gemini API error:", error);
-        return res.status(500).json({ error: "Failed to get response from Gemini." });
+        return res.status(500).json({ error: error.message || "Failed to get response from Gemini." });
     }
 }
