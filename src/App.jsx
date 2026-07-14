@@ -31,6 +31,7 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [showIntro, setShowIntro] = useState(true);
   const [sessionId, setSessionId] = useState(() => Math.random().toString(36).substring(2, 15));
   const [clientInfo, setClientInfo] = useState({ name: "Unknown", type: "Unknown" });
 
@@ -225,7 +226,21 @@ function App() {
 
   return (
     <>
-      <div className="app-container">
+      {showIntro && (
+        <div className="intro-overlay">
+          <div className="intro-card">
+            <div className="intro-icon-wrapper">
+              <Sparkles size={48} className="intro-sparkle" />
+            </div>
+            <h2>Atoms Proposal AI</h2>
+            <p>Your intelligent assistant for crafting professional digital marketing proposals instantly.</p>
+            <button className="intro-button" onClick={() => setShowIntro(false)}>
+              Get Started
+            </button>
+          </div>
+        </div>
+      )}
+      <div className={`app-container ${showIntro ? 'app-blurred' : ''}`}>
         <header className="top-header">
         <div className="header-logo">
           <div className="logo-icon">⚛</div>
