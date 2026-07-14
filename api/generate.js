@@ -164,11 +164,8 @@ export default async function handler(req, res) {
                 const ai = getAiClient(attempts);
                 response = await ai.models.generateContent({
                     model: "gemini-2.5-flash",
-                    contents: prompt,
-                    config: {
-                        systemInstruction: GENERATION_PROMPT,
-                        temperature: 0.2,
-                    },
+                    contents: contents,
+                    systemInstruction: COLLECTION_PROMPT,
                 });
                 break;
             } catch (err) {
