@@ -1,14 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEYS = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-].filter(Boolean);
-
-function getAiClient(keyIndex = 0) {
+function getAiClient() {
     return new GoogleGenAI({ 
-        apiKey: API_KEYS[keyIndex % API_KEYS.length],
+        apiKey: process.env.GEMINI_API_KEY,
         httpOptions: { apiVersion: 'v1' }
     });
 }
@@ -174,7 +168,7 @@ export default async function handler(req, res) {
 
         while (attempts < maxAttempts) {
             try {
-                const ai = getAiClient(attempts);
+                const ai = getAiClient();
                 response = await ai.models.generateContent({
                     model: "gemini-1.5-flash",
                     contents: contents,

@@ -1,13 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEYS = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-].filter(Boolean);
-
-function getAiClient(keyIndex = 0) {
-    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+function getAiClient() {
+    return new GoogleGenAI({ 
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: { apiVersion: 'v1' }
+    });
 }
 
 const FIXED_HEADER = `Atoms Digital Solutions Private Limited
@@ -161,9 +158,9 @@ export default async function handler(req, res) {
 
         while (attempts < maxAttempts) {
             try {
-                const ai = getAiClient(attempts);
+                const ai = getAiClient();
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-1.5-flash",
                     contents: contents,
                     systemInstruction: COLLECTION_PROMPT,
                 });
