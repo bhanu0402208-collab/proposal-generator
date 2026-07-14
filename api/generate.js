@@ -154,7 +154,7 @@ export default async function handler(req, res) {
 
         let response;
         let attempts = 0;
-        const maxAttempts = API_KEYS.length * 2;
+        const maxAttempts = 3;
 
         while (attempts < maxAttempts) {
             try {
