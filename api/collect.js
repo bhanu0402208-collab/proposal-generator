@@ -1,14 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEYS = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-].filter(Boolean);
-
-function getAiClient(keyIndex = 0) {
-    return new GoogleGenAI({ 
-        apiKey: API_KEYS[keyIndex % API_KEYS.length],
+function getAiClient() {
+    return new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
         httpOptions: { apiVersion: 'v1' }
     });
 }
@@ -58,6 +52,9 @@ CONVERSATION STYLE:
 - Be warm, friendly and professional like a helpful human colleague
 - Keep replies short - 1-2 sentences maximum
 - Acknowledge what the user said before asking the next question
+- Be warm, extremely friendly, polite, and highly respectful (use 'please', 'thank you', etc).
+- Keep replies extremely short - 1 sentence maximum if possible.
+- Acknowledge what the user said respectfully before asking the next question.
 
 STEPS (follow in order, one at a time):
 
@@ -170,11 +167,11 @@ export default async function handler(req, res) {
 
         let response;
         let attempts = 0;
-        const maxAttempts = API_KEYS.length * 2;
+        const maxAttempts = 3;
 
         while (attempts < maxAttempts) {
             try {
-                const ai = getAiClient(attempts);
+                const ai = getAiClient();
                 response = await ai.models.generateContent({
                     model: "gemini-1.5-flash",
                     contents: contents,

@@ -1,13 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const API_KEYS = [
-    process.env.GEMINI_API_KEY,
-    process.env.GEMINI_API_KEY_2,
-    process.env.GEMINI_API_KEY_3,
-].filter(Boolean);
-
-function getAiClient(keyIndex = 0) {
-    return new GoogleGenAI({ apiKey: API_KEYS[keyIndex % API_KEYS.length] });
+function getAiClient() {
+    return new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: { apiVersion: 'v1' }
+    });
 }
 
 const FIXED_HEADER = `Atoms Digital Solutions Private Limited
@@ -158,44 +155,10 @@ export default async function handler(req, res) {
         let response;
         let attempts = 0;
         const maxAttempts = API_KEYS.length * 2;
+        const maxAttempts = 3;
 
         while (attempts < maxAttempts) {
             try {
-                const ai = getAiClient(attempts);
-                response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
-                    contents: contents,
-                    systemInstruction: COLLECTION_PROMPT,
-                });
-                break;
-            } catch (err) {
-                attempts++;
-                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
-                    await new Promise((resolve) => setTimeout(resolve, 1000));
-                } else {
-                    throw err;
-                }
+                return res.status(500).json({ error: "Failed to generate proposal." });
             }
-        }
-
-        let html = response.text;
-
-        // Strip any markdown code fences
-        html = html.replace(/^```html\s*/i, "").replace(/\s*```$/i, "").trim();
-        html = html.replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-
-        // Strip any text before the HTML doctype
-        const htmlStart = html.indexOf("<!DOCTYPE") !== -1
-            ? html.indexOf("<!DOCTYPE")
-            : html.indexOf("<html");
-        if (htmlStart > 0) {
-            html = html.substring(htmlStart);
-        }
-
-        return res.status(200).json({ html });
-
-    } catch (error) {
-        console.error("Gemini generate error:", error);
-        return res.status(500).json({ error: "Failed to generate proposal." });
-    }
 }
