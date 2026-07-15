@@ -3,7 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 function getAiClient() {
     return new GoogleGenAI({
         apiKey: process.env.GEMINI_API_KEY,
-        httpOptions: { apiVersion: 'v1' }
     });
 }
 
