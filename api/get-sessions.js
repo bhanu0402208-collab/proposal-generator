@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
         const { data, error } = await supabase
             .from('sessions')
-            .select('id, client_name, client_type, created_at, final_proposal')
+            .select('id, client_name, client_type, created_at, final_proposal, conversation_history')
             .order('created_at', { ascending: false })
             .limit(20);
 

@@ -32,7 +32,7 @@ function App() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [loadingSessions, setLoadingSessions] = useState(false);
   const [showIntro, setShowIntro] = useState(true);
-  const [sessionId, setSessionId] = useState(() => Math.random().toString(36).substring(2, 15));
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID());
   const [clientInfo, setClientInfo] = useState({ name: "Unknown", type: "Unknown" });
 
   const chatWindowRef = useRef(null);
@@ -86,7 +86,7 @@ function App() {
     setInputValue("");
     setProposalData(null);
     setProposalHtml(null);
-    setSessionId(Math.random().toString(36).substring(2, 15));
+    setSessionId(crypto.randomUUID());
     setClientInfo({ name: "Unknown", type: "Unknown" });
   }
 
@@ -301,7 +301,7 @@ function App() {
           {showSidebar && (
             <div className="history-sidebar">
               <div className="sidebar-header">
-                <span>Past Proposals</span>
+                <span>Past Proposals {sessions.length > 0 && `(${sessions.length})`}</span>
                 <button className="close-sidebar" onClick={() => setShowSidebar(false)}>
                   <X size={16} />
                 </button>
