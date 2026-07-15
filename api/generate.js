@@ -152,13 +152,48 @@ export default async function handler(req, res) {
             prompt = `Generate a complete proposal for this client:\n\n${JSON.stringify(proposalData, null, 2)}\n\nOutput raw HTML only. Start with <!DOCTYPE html>. No markdown, no backticks, no explanation text before or after the HTML.`;
         }
 
+        const contents = [
+            {
+                role: "user",
+                parts: [{ text: prompt }],
+            },
+        ];
+
         let response;
         let attempts = 0;
-        const maxAttempts = API_KEYS.length * 2;
         const maxAttempts = 3;
 
         while (attempts < maxAttempts) {
             try {
-                return res.status(500).json({ error: "Failed to generate proposal." });
+                const ai = getAiClient();
+                response = await ai.models.generateContent({
+                    model: "gemini-2.5-flash",
+                    contents: contents,
+                    config: {
+                        systemInstruction: GENERATION_PROMPT,
+                        maxOutputTokens: 8192,
+                    },
+                });
+                break;
+            } catch (err) {
+                attempts++;
+                if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                } else {
+                    throw err;
+                }
             }
+        }
+
+        let html = response.text.trim();
+
+        // Strip markdown code fences if the model wrapped the HTML
+        html = html.replace(/^```html\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+
+        return res.status(200).json({ html });
+
+    } catch (error) {
+        console.error("Generate proposal error:", error);
+        return res.status(500).json({ error: error.message || "Failed to generate proposal." });
+    }
 }

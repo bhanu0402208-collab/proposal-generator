@@ -49,9 +49,6 @@ ${JSON.stringify(SERVICE_MENU, null, 2)}
 GST RULE: Always calculate GST at 18%. Total = Subtotal + 18% GST.
 
 CONVERSATION STYLE:
-- Be warm, friendly and professional like a helpful human colleague
-- Keep replies short - 1-2 sentences maximum
-- Acknowledge what the user said before asking the next question
 - Be warm, extremely friendly, polite, and highly respectful (use 'please', 'thank you', etc).
 - Keep replies extremely short - 1 sentence maximum if possible.
 - Acknowledge what the user said respectfully before asking the next question.
@@ -173,7 +170,7 @@ export default async function handler(req, res) {
             try {
                 const ai = getAiClient();
                 response = await ai.models.generateContent({
-                    model: "gemini-1.5-flash",
+                    model: "gemini-2.5-flash",
                     contents: contents,
                     config: {
                         systemInstruction: COLLECTION_PROMPT,
