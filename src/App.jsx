@@ -27,6 +27,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [proposalData, setProposalData] = useState(null);
   const [proposalHtml, setProposalHtml] = useState(null);
+  const [proposalContent, setProposalContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -64,7 +65,8 @@ function App() {
 
   function handleLoadSession(session) {
     setProposalHtml(session.final_proposal);
-    setProposalData(null);
+    setProposalContent(session.content || null);
+    setProposalData(session.proposal_data || null);
     setSessionId(session.id);
     setClientInfo({ name: session.client_name, type: session.client_type });
     if (session.conversation_history && session.conversation_history.length > 0) {
@@ -86,6 +88,7 @@ function App() {
     setInputValue("");
     setProposalData(null);
     setProposalHtml(null);
+    setProposalContent(null);
     setSessionId(crypto.randomUUID());
     setClientInfo({ name: "Unknown", type: "Unknown" });
   }
@@ -106,12 +109,14 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             refinementInstruction: inputValue,
-            currentHtml: proposalHtml,
+            currentContent: proposalContent,
+            proposalData,
           }),
         });
         const data = await response.json();
         if (data.html) {
           setProposalHtml(data.html);
+          setProposalContent(data.content);
           const updatedMessages = [
             ...newMessages,
             { role: "assistant", text: "Done! Proposal updated successfully." },
@@ -127,6 +132,8 @@ function App() {
               clientType: clientInfo.type,
               history: updatedMessages,
               proposal: data.html,
+              content: data.content,
+              proposalData,
             }),
           }).catch((err) => console.warn("Session save failed:", err));
         }
@@ -183,6 +190,7 @@ function App() {
 
       if (data.html) {
         setProposalHtml(data.html);
+        setProposalContent(data.content);
 
         fetch("/api/save-session", {
           method: "POST",
@@ -193,6 +201,8 @@ function App() {
             clientType: proposalData.clientType,
             history: messages,
             proposal: data.html,
+            content: data.content,
+            proposalData,
           }),
         }).catch((err) => console.warn("Session save failed:", err));
 
