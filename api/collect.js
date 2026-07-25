@@ -1,8 +1,9 @@
 import { GoogleGenAI } from "@google/genai";
 
 function getAiClient() {
-    return new GoogleGenAI({
+    return new GoogleGenAI({ 
         apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: { apiVersion: 'v1' }
     });
 }
 
@@ -143,7 +144,7 @@ export default async function handler(req, res) {
         const contents = [
             {
                 role: "user",
-                parts: [{ text: "Start a new proposal." }],
+                parts: [{ text: `SYSTEM INSTRUCTIONS:\n${COLLECTION_PROMPT}\n\nStart a new proposal.` }],
             },
             {
                 role: "model",
@@ -169,10 +170,9 @@ export default async function handler(req, res) {
             try {
                 const ai = getAiClient();
                 response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-1.5-flash",
                     contents: contents,
                     config: {
-                        systemInstruction: COLLECTION_PROMPT,
                         maxOutputTokens: 8192,
                     },
                 });

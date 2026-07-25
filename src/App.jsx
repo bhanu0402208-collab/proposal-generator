@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Plus, FileText, Sparkles, History, X, Download } from "lucide-react";
+import { Send, Plus, FileText, Sparkles, History, X } from "lucide-react";
+import ProposalRenderer from "./components/ProposalRenderer";
 import "./App.css";
 
 const INITIAL_MESSAGE = {
@@ -26,7 +27,7 @@ function App() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [proposalData, setProposalData] = useState(null);
-  const [proposalHtml, setProposalHtml] = useState(null);
+  const [proposalJson, setProposalJson] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [sessions, setSessions] = useState([]);
   const [showSidebar, setShowSidebar] = useState(false);
@@ -51,7 +52,6 @@ function App() {
       setSessions(data.sessions || []);
     } catch (error) {
       console.error("Failed to fetch sessions:", error);
-      setSessions([]);
     } finally {
       setLoadingSessions(false);
     }
@@ -63,8 +63,17 @@ function App() {
   }
 
   function handleLoadSession(session) {
-    setProposalHtml(session.final_proposal);
-    setProposalData(null);
+    let loadedJson = session.proposalJson || session.final_proposal;
+    let loadedData = session.proposalData || null;
+    
+    // Handle the new nested payload format
+    if (session.final_proposal && session.final_proposal.proposalJson) {
+      loadedJson = session.final_proposal.proposalJson;
+      loadedData = session.final_proposal.proposalData;
+    }
+
+    setProposalData(loadedData);
+    setProposalJson(loadedJson);
     setSessionId(session.id);
     setClientInfo({ name: session.client_name, type: session.client_type });
     if (session.conversation_history && session.conversation_history.length > 0) {
@@ -85,7 +94,7 @@ function App() {
     setMessages([INITIAL_MESSAGE]);
     setInputValue("");
     setProposalData(null);
-    setProposalHtml(null);
+    setProposalJson(null);
     setSessionId(crypto.randomUUID());
     setClientInfo({ name: "Unknown", type: "Unknown" });
   }
@@ -100,24 +109,24 @@ function App() {
     setIsLoading(true);
 
     try {
-      if (proposalHtml) {
+      if (proposalJson) {
         const response = await fetch("/api/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             refinementInstruction: inputValue,
-            currentHtml: proposalHtml,
+            currentProposalJson: proposalJson,
           }),
         });
         const data = await response.json();
-        if (data.html) {
-          setProposalHtml(data.html);
+        if (data.proposalJson) {
+          setProposalJson(data.proposalJson);
           const updatedMessages = [
             ...newMessages,
             { role: "assistant", text: "Done! Proposal updated successfully." },
           ];
           setMessages(updatedMessages);
-
+          
           fetch("/api/save-session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -126,7 +135,10 @@ function App() {
               clientName: clientInfo.name,
               clientType: clientInfo.type,
               history: updatedMessages,
-              proposal: data.html,
+              proposal: {
+                proposalJson: data.proposalJson,
+                proposalData: proposalData
+              }
             }),
           }).catch((err) => console.warn("Session save failed:", err));
         }
@@ -181,8 +193,8 @@ function App() {
 
       const data = await response.json();
 
-      if (data.html) {
-        setProposalHtml(data.html);
+      if (data.proposalJson) {
+        setProposalJson(data.proposalJson);
 
         fetch("/api/save-session", {
           method: "POST",
@@ -192,7 +204,10 @@ function App() {
             clientName: proposalData.clientName,
             clientType: proposalData.clientType,
             history: messages,
-            proposal: data.html,
+            proposal: {
+              proposalJson: data.proposalJson,
+              proposalData: proposalData
+            }
           }),
         }).catch((err) => console.warn("Session save failed:", err));
 
@@ -208,29 +223,6 @@ function App() {
       console.error("Generate error:", error);
     } finally {
       setIsGenerating(false);
-    }
-  }
-
-  async function handleDownload() {
-    if (!proposalHtml) return;
-    try {
-      const res = await fetch("/api/docs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html: proposalHtml, filename: `${clientInfo.name || "Proposal"}.docx` }),
-      });
-      if (!res.ok) throw new Error("Download failed");
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${clientInfo.name || "Proposal"}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download error:", err);
     }
   }
 
@@ -274,198 +266,185 @@ function App() {
       )}
       <div className={`app-container ${showIntro ? 'app-blurred' : ''}`}>
         <header className="top-header">
-          <div className="header-logo">
-            <div className="logo-icon">⚛</div>
-            <div className="logo-text">
-              <span className="logo-atoms">atoms</span>
-              <span className="logo-ds">Digital Solutions</span>
-            </div>
+        <div className="header-logo">
+          <div className="logo-icon">⚛</div>
+          <div className="logo-text">
+            <span className="logo-atoms">atoms</span>
+            <span className="logo-ds">Digital Solutions</span>
           </div>
-          <div className="header-title">
-            <h1>Proposal Generator Agent</h1>
-            <p>AI-powered proposal assistant for Atoms Digital Solutions</p>
+        </div>
+        <div className="header-title">
+          <h1>Proposal Generator Agent</h1>
+          <p>AI-powered proposal assistant for Atoms Digital Solutions</p>
+        </div>
+        <div className="header-actions">
+          <button className="history-button" onClick={handleOpenHistory}>
+            <History size={16} /> History
+          </button>
+          <div className="header-badge">
+            <Sparkles size={14} />
+            <span>AI Powered</span>
           </div>
-          <div className="header-actions">
-            <button className="history-button" onClick={handleOpenHistory}>
-              <History size={16} /> History
-            </button>
-            <div className="header-badge">
-              <Sparkles size={14} />
-              <span>AI Powered</span>
-            </div>
-          </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="main-content">
-          {/* History Sidebar */}
-          {showSidebar && (
-            <div className="history-sidebar">
-              <div className="sidebar-header">
-                <span>Past Proposals {sessions.length > 0 && `(${sessions.length})`}</span>
-                <button className="close-sidebar" onClick={() => setShowSidebar(false)}>
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="sidebar-content">
-                {loadingSessions ? (
-                  <div className="sidebar-loading">Loading...</div>
-                ) : sessions.length === 0 ? (
-                  <div className="sidebar-empty">No past proposals yet.</div>
-                ) : (
-                  sessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="session-item"
-                      onClick={() => handleLoadSession(session)}
-                    >
-                      <div className="session-name">{session.client_name}</div>
-                      <div className="session-meta">
-                        {session.client_type} · {formatDate(session.created_at)}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Chat panel */}
-          <div className="chat-panel">
-            <div className="chat-panel-header">
-              <span>Conversation</span>
-              <button className="new-button" onClick={handleNew}>
-                <Plus size={14} /> New
+      <div className="main-content">
+        {/* History Sidebar */}
+        {showSidebar && (
+          <div className="history-sidebar">
+            <div className="sidebar-header">
+              <span>Past Proposals</span>
+              <button className="close-sidebar" onClick={() => setShowSidebar(false)}>
+                <X size={16} />
               </button>
             </div>
-
-            <div className="chat-window" ref={chatWindowRef}>
-              {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={
-                    message.role === "user"
-                      ? "message user-message"
-                      : "message assistant-message"
-                  }
-                >
-                  {message.role === "assistant" && (
-                    <span className="msg-label">AI </span>
-                  )}
-                  {message.text}
-                </div>
-              ))}
-              {isLoading && (
-                <div className="message assistant-message loading-message">
-                  <span className="msg-label">AI </span>
-                  <span className="dot">●</span>
-                  <span className="dot">●</span>
-                  <span className="dot">●</span>
-                </div>
-              )}
-            </div>
-
-            <div className="chat-input-area">
-              <div className="chat-input-bar">
-                <textarea
-                  value={inputValue}
-                  onChange={handleTextareaChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    proposalHtml
-                      ? "Type changes to refine the proposal..."
-                      : "Type your answer here... (Enter to send)"
-                  }
-                  disabled={isLoading}
-                  rows={1}
-                />
-                <button
-                  className="send-button"
-                  onClick={handleSend}
-                  disabled={isLoading || inputValue.trim() === ""}
-                >
-                  <Send size={16} />
-                </button>
-              </div>
-              <button
-                className="generate-button"
-                onClick={handleGenerate}
-                disabled={!proposalData || isGenerating}
-              >
-                {isGenerating ? (
-                  <><span className="spinner" /> Generating...</>
-                ) : (
-                  <><Sparkles size={16} /> Generate Proposal Preview</>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Proposal panel */}
-          <div className="proposal-panel">
-            <div className="proposal-panel-header">
-              <span>Proposal Preview</span>
-              {proposalHtml && (
-                <div className="header-buttons">
-                  <button
-                    className="print-button"
-                    onClick={() => {
-                      const win = window.open("", "_blank");
-                      win.document.write(proposalHtml);
-                      win.document.close();
-                      win.print();
-                    }}
+            <div className="sidebar-content">
+              {loadingSessions ? (
+                <div className="sidebar-loading">Loading...</div>
+              ) : sessions.length === 0 ? (
+                <div className="sidebar-empty">No past proposals yet.</div>
+              ) : (
+                sessions.map((session) => (
+                  <div
+                    key={session.id}
+                    className="session-item"
+                    onClick={() => handleLoadSession(session)}
                   >
-                    🖨 Print / Save PDF
-                  </button>
-                  <button className="download-button" onClick={handleDownload}>
-                    <Download size={14} style={{ marginRight: 6 }} />
-                    Download DOCX
-                  </button>
-                </div>
+                    <div className="session-name">{session.client_name}</div>
+                    <div className="session-meta">
+                      {session.client_type} · {formatDate(session.created_at)}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
+          </div>
+        )}
 
-            {proposalHtml ? (
-              <iframe
-                className="proposal-iframe"
-                srcDoc={proposalHtml}
-                title="Proposal Preview"
-              />
-            ) : (
-              <div className="proposal-empty">
-                <div className="empty-icon-wrap">
-                  <FileText size={40} />
-                </div>
-                <h2>Proposal Preview</h2>
-                <p>
-                  Chat with the AI on the left, then click{" "}
-                  <strong>"Generate Proposal Preview"</strong> to create your document.
-                </p>
-                <div className="steps">
-                  <div className="step active">
-                    <span className="step-num">1</span>
-                    <span>Chat</span>
-                  </div>
-                  <span className="arrow">→</span>
-                  <div className="step">
-                    <span className="step-num">2</span>
-                    <span>Confirm</span>
-                  </div>
-                  <span className="arrow">→</span>
-                  <div className="step">
-                    <span className="step-num">3</span>
-                    <span>Generate</span>
-                  </div>
-                </div>
+        {/* Chat panel */}
+        <div className="chat-panel">
+          <div className="chat-panel-header">
+            <span>Conversation</span>
+            <button className="new-button" onClick={handleNew}>
+              <Plus size={14} /> New
+            </button>
+          </div>
+
+          <div className="chat-window" ref={chatWindowRef}>
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={
+                  message.role === "user"
+                    ? "message user-message"
+                    : "message assistant-message"
+                }
+              >
+                {message.role === "assistant" && (
+                  <span className="msg-label">AI </span>
+                )}
+                {message.text}
+              </div>
+            ))}
+            {isLoading && (
+              <div className="message assistant-message loading-message">
+                <span className="msg-label">AI </span>
+                <span className="dot">●</span>
+                <span className="dot">●</span>
+                <span className="dot">●</span>
               </div>
             )}
           </div>
+
+          <div className="chat-input-area">
+            <div className="chat-input-bar">
+              <textarea
+                value={inputValue}
+                onChange={handleTextareaChange}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  proposalJson
+                    ? "Type changes to refine the proposal..."
+                    : "Type your answer here... (Enter to send)"
+                }
+                disabled={isLoading}
+                rows={1}
+              />
+              <button
+                className="send-button"
+                onClick={handleSend}
+                disabled={isLoading || inputValue.trim() === ""}
+              >
+                <Send size={16} />
+              </button>
+            </div>
+            <button
+              className="generate-button"
+              onClick={handleGenerate}
+              disabled={!proposalData || isGenerating}
+            >
+              {isGenerating ? (
+                <><span className="spinner" /> Generating...</>
+              ) : (
+                <><Sparkles size={16} /> Generate Proposal Preview</>
+              )}
+            </button>
+          </div>
         </div>
 
-        <footer className="app-footer">
-          © 2026 All rights reserved | ⚛ Atoms Digital Solutions
-        </footer>
+        {/* Proposal panel */}
+        <div className="proposal-panel">
+          <div className="proposal-panel-header">
+            <span>Proposal Preview</span>
+            {proposalJson && (
+              <button
+                className="print-button"
+                onClick={() => window.print()}
+              >
+                🖨 Print / Save PDF
+              </button>
+            )}
+          </div>
+
+          {proposalJson ? (
+            <div className="proposal-content-scrollable">
+              <ProposalRenderer data={proposalData} content={proposalJson} />
+            </div>
+          ) : (
+            <div className="proposal-empty">
+              <div className="empty-icon-wrap">
+                <FileText size={40} />
+              </div>
+              <h2>Proposal Preview</h2>
+              <p>
+                Chat with the AI on the left, then click{" "}
+                <strong>"Generate Proposal Preview"</strong> to create your document.
+              </p>
+              <div className="steps">
+                <div className="step active">
+                  <span className="step-num">1</span>
+                  <span>Chat</span>
+                </div>
+                <span className="arrow">→</span>
+                <div className="step">
+                  <span className="step-num">2</span>
+                  <span>Confirm</span>
+                </div>
+                <span className="arrow">→</span>
+                <div className="step">
+                  <span className="step-num">3</span>
+                  <span>Generate</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      <footer className="app-footer">
+        © 2026 All rights reserved | ⚛ Atoms Digital Solutions
+      </footer>
+    </div>
     </>
   );
 }
