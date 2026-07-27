@@ -203,14 +203,15 @@ function formatRupees(amount) {
 
 async function retryingCall(fn) {
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 5;
     while (attempts < maxAttempts) {
         try {
             return await fn();
         } catch (err) {
             attempts++;
             if ((err.status === 429 || err.status === 503) && attempts < maxAttempts) {
-                await new Promise((resolve) => setTimeout(resolve, 1000));
+                const waitMs = 1000 * Math.pow(2, attempts - 1);
+                await new Promise((resolve) => setTimeout(resolve, waitMs));
             } else {
                 throw err;
             }
@@ -461,6 +462,9 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error("Generate proposal error:", error);
-        return res.status(500).json({ error: error.message || "Failed to generate proposal." });
+        const friendlyMessage = (error.status === 429 || error.status === 503)
+            ? "Our AI assistant is a bit busy right now. Please wait a moment and try again."
+            : (error.message || "Failed to generate proposal.");
+        return res.status(500).json({ error: friendlyMessage });
     }
 }
