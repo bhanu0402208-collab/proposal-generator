@@ -7,65 +7,108 @@ function getAiClient() {
 }
 
 const FIXED_OBJECTIVES = [
-    "Build a strong and consistent digital presence",
-    "Increase visibility and brand awareness among target patients",
-    "Educate patients through valuable and relevant content",
-    "Build trust and credibility through doctor-led content",
-    "Drive appointment bookings and patient enquiries",
-    "Improve Google search rankings and local discoverability",
-    "Strengthen reputation through patient testimonials and reviews",
+    "Increase Brand Awareness in the Local Community",
+    "Generate Qualified Patient Leads and Enquiries",
+    "Improve Local Search Visibility on Google",
+    "Build Trust Through Educational Healthcare Content",
+    "Increase Appointment Bookings",
+    "Strengthen Online Reputation and Reviews",
+    "Improve Patient Engagement Across Social Media",
 ];
 
+const WHY_PATIENTS_ONLINE = "Today's patients research online before making healthcare decisions. They evaluate hospitals and doctors based on reviews, ratings, doctor expertise, social media presence, and patient success stories. A strong, consistent digital presence directly shapes patient trust and influences appointment decisions.";
+
 const FIXED_PROCESS = [
-    "Requirement Discussion — Understanding your goals and target audience",
-    "Strategy Planning — Content calendar, themes, and platform strategy",
-    "Content Creation — Reels, posters, shoots as per agreed deliverables",
-    "Client Approval — Review and approval before publishing",
-    "Publishing — Scheduled posting across selected platforms",
-    "Performance Review — Monthly insights and recommendations",
+    "Discovery",
+    "Strategy Development",
+    "Monthly Content Planning",
+    "Creative Production",
+    "Review & Approval",
+    "Publishing & Promotion",
+    "Monitoring & Optimization",
+    "Monthly Performance Review",
 ];
 
 const FIXED_TIMELINE = [
-    ["Week 1", "Content planning, strategy alignment, and approvals"],
-    ["Week 2", "Content creation and video shoot (if applicable)"],
-    ["Week 3", "Publishing, optimization, and community engagement"],
-    ["Week 4", "Performance tracking, reporting, and next month planning"],
+    { week: "Week 1", items: ["Brand Audit", "Competitor Analysis", "Content Calendar"] },
+    { week: "Week 2", items: ["Shoot", "Design", "Editing"] },
+    { week: "Week 3", items: ["Publishing", "Community Engagement", "Ads Optimization"] },
+    { week: "Week 4", items: ["Analytics", "Report", "Strategy Review"] },
 ];
 
 const FIXED_REPORTING = [
     "Reach and impressions across all platforms",
     "Engagement rate (likes, comments, shares, saves)",
     "Follower growth tracking",
-    "Leads and enquiries generated",
-    "Best-performing content analysis",
+    "Profile visits and website clicks",
+    "WhatsApp clicks and appointment enquiries",
+    "Cost per lead (for ad campaigns)",
+    "Top-performing content each month",
+    "Audience demographics",
+    "Campaign ROI (for ad campaigns)",
     "Strategic recommendations for the next month",
 ];
 
 const FIXED_IMPORTANT_NOTES = [
     "Ad budget is separate from the management fee quoted above",
-    "Results depend on consistency of content creation and posting",
-    "Doctor/hospital participation improves content performance significantly",
+    "One round of revisions is included per creative",
+    "Hospital/doctor to provide timely approvals within 48 hours",
+    "Emergency creatives are subject to team availability",
+    "Additional shoots beyond the agreed scope are quoted separately",
+    "Deliverables begin after onboarding is completed",
+    "Results depend on consistency of content creation, posting, and doctor/hospital participation",
     "4-day lead time required for additional design requests",
 ];
 
 const FIXED_WHY_ATOMS = [
-    "Specialized exclusively in healthcare digital marketing",
-    "Deep understanding of patient psychology and medical content",
-    "Proven track record with hospitals and clinics across Andhra Pradesh",
-    "Dedicated content team with medical communication expertise",
-    "Transparent reporting and consistent communication",
+    "Dedicated Healthcare Marketing Team",
+    "Patient-Centric Marketing Strategy",
+    "Data-Driven Decision Making",
+    "Creative Video Production In-House",
+    "Transparent Monthly Reporting",
+    "Proven Track Record Across Andhra Pradesh",
+    "Faster Turnaround Time",
+    "Deep Understanding of Patient Psychology",
+];
+
+const FIXED_KPI_TABLE = [
+    ["Social Reach", "Increase Monthly"],
+    ["Engagement Rate", "Improve Consistently"],
+    ["Leads Generated", "Growth Month-on-Month"],
+    ["Appointment Enquiries", "Increase"],
+    ["Google Local Visibility", "Improve"],
+    ["Brand Awareness", "Strengthen"],
+];
+
+const FIXED_CLIENT_RESPONSIBILITIES = [
+    "Provide branding assets (logo, photos, brand guidelines)",
+    "Coordinate doctor/staff availability for shoots and interviews",
+    "Approve creatives within 48 hours of sharing",
+    "Share information required for campaigns and content",
+    "Provide access to relevant social media accounts",
+];
+
+const STANDARD_DELIVERABLE_EXTRAS = [
+    ["Stories", "20"],
+    ["Caption Writing", "Included"],
+    ["Hashtag Research", "Included"],
+    ["Monthly Content Calendar", "1"],
+    ["Community Management", "Included"],
+    ["Performance Report", "1"],
 ];
 
 // ---------- AI PROMPTS (only for the small variable writing pieces) ----------
 
 const CONTENT_WRITING_RULES = `WRITING RULES (apply to every field you write):
-- Short, direct sentences. Maximum 2-3 sentences per paragraph.
+- Write like an experienced healthcare marketing consultant, not a template. Premium, confident, consultative tone — this should read like a proposal worth the client's investment, not generic filler.
+- Short, direct paragraphs (2-3 sentences).
 - NEVER use these phrases: "We are confident", "We recognize the need", "dynamic and competitive", "This service focuses on", "position [client] as a trusted authority", "High-quality visual and video content is crucial"
+- CRITICAL - AVOID REPETITION: core ideas like "increase visibility", "build trust", "patient engagement", and "online presence" must each appear ONLY ONCE across the entire content, in whichever field they matter most. Do not restate the same concept in multiple fields using different words.
 - Be specific to the client's name, city, and speciality (if any). No generic filler.
 - Plain text only. No HTML tags, no markdown, no asterisks.`;
 
 function buildInitialContentPrompt(proposalData) {
-    return `You are a proposal writer for Atoms Digital Solutions, a healthcare digital marketing agency in Andhra Pradesh, India.
+    return `You are a senior proposal writer for Atoms Digital Solutions, a healthcare digital marketing agency in Andhra Pradesh, India.
 
 Client details:
 ${JSON.stringify(proposalData, null, 2)}
@@ -76,19 +119,19 @@ Output ONLY a JSON object (no markdown fences, no explanation) with exactly this
 {
   "understanding": ["paragraph 1", "paragraph 2"],
   "serviceScope": [
-    { "name": "Service name", "whatWeDo": ["bullet", "bullet"], "expectedResults": ["bullet", "bullet"] }
+    { "name": "Service name", "scopeOfWork": ["bullet", "bullet"], "deliverables": ["bullet", "bullet"], "resultsHeading": "Benefits or Campaign Objectives", "results": ["bullet", "bullet"] }
   ],
   "contentStrategy": [
     { "title": "Theme name", "description": "one short sentence" }
   ],
-  "conclusion": "1-2 sentences, personalised to the client name."
+  "conclusion": "2-3 sentences, personalised to the client name, emotionally resonant about patient trust and measurable growth — not just 'we look forward to working with you'."
 }
 
 Rules for the fields:
-- "understanding": exactly 2 short paragraphs about this specific client's requirement.
-- "serviceScope": one entry for social media management (based on reels/posters/shoots), plus one entry per selected add-on that represents a distinct service (e.g. SEO, Ads, Website Management). Do not create entries for add-ons that are just extra units (Extra Reel, Extra Poster, Regular Shoot, Premium Shoot) — those belong in deliverables/pricing only, not service scope.
-- "contentStrategy": 5-6 content theme categories relevant to this client's speciality/type. Only include this field if social media platforms were selected.
-- "conclusion": personalised, no banned phrases.`;
+- "understanding": exactly 2 short paragraphs. Paragraph 1: establish the client's current standing and why digital presence matters now for patient acquisition. Paragraph 2: position Atoms' strategy specifically for this client (educational content, community engagement, patient enquiries, reputation).
+- "serviceScope": one entry for social media management (based on reels/posters/shoots), plus one entry per selected add-on that represents a distinct service (SEO, Ads, Website Management). Do not create entries for add-ons that are just extra units (Extra Reel, Extra Poster, Regular Shoot, Premium Shoot). For each entry: "scopeOfWork" = internal activities (content calendar, hashtag research, community management, etc.), "deliverables" = concrete monthly output, "resultsHeading" = "Campaign Objectives" for any ads-related service, otherwise "Benefits", "results" = 3-4 bullets matching that heading.
+- "contentStrategy": 7-8 varied content theme categories (e.g. health tips, doctor spotlight, patient stories, facility tours, preventive care, FAQs, myth vs fact, seasonal awareness, doctor interviews, behind the scenes) relevant to this client's speciality/type. Only include this field if social media platforms were selected.
+- "conclusion": personalised, impactful, no banned phrases, no repeated ideas from earlier fields.`;
 }
 
 function buildRefinementPrompt(proposalData, currentContent, instruction) {
@@ -178,6 +221,12 @@ function renderList(items) {
         .join("")}</ul>`;
 }
 
+function renderCheckList(items) {
+    return `<ul style="list-style:none;margin:0 0 12px 0;padding:0;">${items
+        .map((item) => `<li style="margin-bottom:8px;">✔ ${escapeHtml(item)}</li>`)
+        .join("")}</ul>`;
+}
+
 function sectionHeading(title) {
     return `<h2 style="color:#1e3a8a;text-transform:uppercase;letter-spacing:1px;font-size:14px;font-weight:bold;border-bottom:2px solid #1e3a8a;padding-bottom:6px;margin-top:32px;">${escapeHtml(title)}</h2>`;
 }
@@ -195,6 +244,26 @@ function renderTable(headers, rows) {
     return `<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">${thead}${tbody}</table>`;
 }
 
+function renderProcessFlow(steps) {
+    return `<div style="margin-bottom:16px;">${steps
+        .map(
+            (step, i) =>
+                `<div style="padding:10px 16px;background:#f8fafc;border-left:3px solid #1e3a8a;margin-bottom:${i < steps.length - 1 ? "4px" : "0"};font-weight:600;">${escapeHtml(step)}</div>${i < steps.length - 1 ? `<div style="text-align:center;color:#1e3a8a;font-weight:bold;margin:2px 0;">↓</div>` : ""
+                }`
+        )
+        .join("")}</div>`;
+}
+
+function renderTimeline(timeline) {
+    return timeline
+        .map(
+            (wk) => `
+<h3 style="margin-top:14px;margin-bottom:4px;color:#1e3a8a;">${escapeHtml(wk.week)}</h3>
+${renderList(wk.items)}`
+        )
+        .join("");
+}
+
 function buildProposalHtml(proposalData, content) {
     const {
         clientName, city, speciality, packageName,
@@ -204,6 +273,14 @@ function buildProposalHtml(proposalData, content) {
 
     const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const platformList = (platforms || []).join(", ");
+    const hasSocial = (reels > 0 || posters > 0);
+
+    const deliverableRows = [
+        ["Reels", String(reels), platformList],
+        ["Posters", String(posters), platformList],
+        ...(shoots > 0 ? [["Professional Shoot", String(shoots), "On-site (Content for " + platformList + ")"]] : []),
+        ...(hasSocial ? STANDARD_DELIVERABLE_EXTRAS.map(([name, qty]) => [name, qty, platformList]) : []),
+    ];
 
     let html = `<!DOCTYPE html>
 <html lang="en">
@@ -225,28 +302,26 @@ ${(content.understanding || []).map((p) => `<p style="margin-bottom:12px;">${esc
 ${sectionHeading("Objectives of Digital Marketing")}
 ${renderList(FIXED_OBJECTIVES)}
 
+${sectionHeading("Why Patients Choose Hospitals Online")}
+<p style="margin-bottom:12px;">${escapeHtml(WHY_PATIENTS_ONLINE)}</p>
+
 ${sectionHeading("Recommended Service Scope")}
 ${(content.serviceScope || [])
             .map(
                 (svc) => `
 <h3 style="margin-top:16px;margin-bottom:4px;">${escapeHtml(svc.name)}</h3>
-<div style="font-weight:bold;margin-top:8px;">What We Do:</div>
-${renderList(svc.whatWeDo || [])}
-<div style="font-weight:bold;">Expected Results:</div>
-${renderList(svc.expectedResults || [])}
+<div style="font-weight:bold;margin-top:8px;">Scope of Work:</div>
+${renderList(svc.scopeOfWork || [])}
+<div style="font-weight:bold;">Deliverables:</div>
+${renderList(svc.deliverables || [])}
+<div style="font-weight:bold;">${escapeHtml(svc.resultsHeading || "Benefits")}:</div>
+${renderList(svc.results || [])}
 `
             )
             .join("")}
 
 ${sectionHeading("Monthly Deliverables")}
-${renderTable(
-                ["Deliverable", "Quantity", "Platform"],
-                [
-                    ["Reels", String(reels), platformList],
-                    ["Posters", String(posters), platformList],
-                    ...(shoots > 0 ? [["Video Shoots", String(shoots), "On-site (Content for " + platformList + ")"]] : []),
-                ]
-            )}
+${renderTable(["Deliverable", "Quantity", "Platform"], deliverableRows)}
 
 ${content.contentStrategy && content.contentStrategy.length > 0
             ? `${sectionHeading("Content Strategy")}
@@ -255,28 +330,34 @@ ${renderList(content.contentStrategy.map((c) => `${c.title}: ${c.description}`))
         }
 
 ${sectionHeading("Our Process")}
-<ol style="margin:0 0 12px 0;padding-left:20px;">${FIXED_PROCESS.map((p) => `<li style="margin-bottom:6px;">${escapeHtml(p)}</li>`).join("")}</ol>
+${renderProcessFlow(FIXED_PROCESS)}
 
 ${sectionHeading("Project Timeline")}
-${renderTable(["Week", "Focus"], FIXED_TIMELINE.map(([w, d]) => [escapeHtml(w), escapeHtml(d)]))}
+${renderTimeline(FIXED_TIMELINE)}
 
 ${addOns.length > 0
             ? `${sectionHeading("Add-Ons")}
-${renderTable(["Name", "Price"], addOns.map((a) => [escapeHtml(a.name), formatRupees(a.price)]))}`
+${renderTable(["Name", "Investment"], addOns.map((a) => [escapeHtml(a.name), formatRupees(a.price)]))}`
             : ""
         }
 
 ${sectionHeading("Pricing Table")}
 ${renderTable(
-            ["Item", "Price"],
+            ["Item", "Investment"],
             [
                 [`Base Package (${escapeHtml(packageName)})`, formatRupees(basePrice)],
                 ...addOns.map((a) => [`Add-On: ${escapeHtml(a.name)}`, formatRupees(a.price)]),
                 ["Subtotal", formatRupees(subtotal)],
                 ["GST (18%)", formatRupees(gst)],
-                ["<strong>Total Price</strong>", `<strong>${formatRupees(totalPrice)}</strong>`],
+                ["<strong>Total Investment</strong>", `<strong>${formatRupees(totalPrice)}</strong>`],
             ]
         )}
+
+${sectionHeading("Success Metrics (KPIs)")}
+${renderTable(["KPI", "Goal"], FIXED_KPI_TABLE)}
+
+${sectionHeading("Client Responsibilities")}
+${renderList(FIXED_CLIENT_RESPONSIBILITIES)}
 
 ${sectionHeading("Reporting & Analytics")}
 <p>Monthly performance reports will include:</p>
@@ -285,8 +366,8 @@ ${renderList(FIXED_REPORTING)}
 ${sectionHeading("Important Notes")}
 ${renderList(FIXED_IMPORTANT_NOTES)}
 
-${sectionHeading("Why Atoms Digital Solutions?")}
-${renderList(FIXED_WHY_ATOMS)}
+${sectionHeading("Why Partner With Atoms Digital Solutions")}
+${renderCheckList(FIXED_WHY_ATOMS)}
 
 ${sectionHeading("Conclusion")}
 <p>${escapeHtml(content.conclusion || "")}</p>
@@ -320,13 +401,12 @@ export default async function handler(req, res) {
         let content;
 
         if (refinementInstruction && currentContent) {
-            // Targeted edit: send only the small content JSON, not the full HTML.
             const prompt = buildRefinementPrompt(proposalData, currentContent, refinementInstruction);
             const raw = await callGemini("You edit proposal content JSON precisely and conservatively.", prompt);
             content = parseJsonFromModel(raw);
         } else {
             const prompt = buildInitialContentPrompt(proposalData);
-            const raw = await callGemini("You write healthcare marketing proposal content as JSON.", prompt);
+            const raw = await callGemini("You write premium healthcare marketing proposal content as JSON.", prompt);
             content = parseJsonFromModel(raw);
         }
 
