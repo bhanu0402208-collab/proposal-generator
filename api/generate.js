@@ -30,13 +30,13 @@ const FIXED_PROCESS = [
 ];
 
 const FIXED_TIMELINE = [
-    { week: "Week 1", items: ["Brand Audit", "Competitor Analysis", "Content Calendar"] },
+    { week: "Week 1", items: ["Digital Presence Audit", "Competitor Analysis", "Content Calendar"] },
     { week: "Week 2", items: ["Shoot", "Design", "Editing"] },
     { week: "Week 3", items: ["Publishing", "Community Engagement", "Ads Optimization"] },
     { week: "Week 4", items: ["Analytics", "Report", "Strategy Review"] },
 ];
 
-const FIXED_REPORTING = [
+const FIXED_REPORTING_BASE = [
     "Reach and impressions across all platforms",
     "Engagement rate (likes, comments, shares, saves)",
     "Follower growth tracking",
@@ -46,7 +46,7 @@ const FIXED_REPORTING = [
     "Top-performing content each month",
     "Audience demographics",
     "Campaign ROI (for ad campaigns)",
-    "Strategic recommendations for the next month",
+    "Monthly action plan for the next month",
 ];
 
 const FIXED_IMPORTANT_NOTES = [
@@ -58,6 +58,7 @@ const FIXED_IMPORTANT_NOTES = [
     "Deliverables begin after onboarding is completed",
     "Results depend on consistency of content creation, posting, and doctor/hospital participation",
     "4-day lead time required for additional design requests",
+    "Healthcare-related content will be created based on information provided and approved by the hospital",
 ];
 
 const FIXED_WHY_ATOMS = [
@@ -78,6 +79,7 @@ const FIXED_KPI_TABLE = [
     ["Appointment Enquiries", "Increase"],
     ["Google Local Visibility", "Improve"],
     ["Brand Awareness", "Strengthen"],
+    ["Website Traffic", "Increase Organic Visitors"],
 ];
 
 const FIXED_CLIENT_RESPONSIBILITIES = [
@@ -88,6 +90,27 @@ const FIXED_CLIENT_RESPONSIBILITIES = [
     "Provide access to relevant social media accounts",
 ];
 
+const FIXED_EXPECTED_OUTCOMES = [
+    ["Brand Awareness", "Significant Growth"],
+    ["Google Visibility", "Higher Local Rankings"],
+    ["Social Media Reach", "Consistent Monthly Increase"],
+    ["Patient Enquiries", "Increase Through Digital Channels"],
+    ["Online Reputation", "More Positive Reviews"],
+    ["Community Engagement", "Higher Interaction Rate"],
+];
+
+const FIXED_TERMS = [
+    "Proposal validity: 15 days from the date of this proposal",
+    "Payment terms: 50% advance, 50% before month end (or as mutually agreed)",
+    "GST applicable as mentioned in the pricing table",
+    "Deliverables begin after advance payment and onboarding are completed",
+    "Ownership of creative assets transfers to the client after full payment",
+    "Cancellation requires 30 days written notice from either party",
+];
+
+const GMB_SCOPE = ["Weekly Posts", "Photo Uploads", "Review Management", "Business Information Updates", "Service Listing Updates"];
+const GMB_BENEFITS = ["Better Local Rankings", "More Calls", "More Direction Requests", "Increased Trust"];
+
 const STANDARD_DELIVERABLE_EXTRAS = [
     ["Stories", "20"],
     ["Caption Writing", "Included"],
@@ -97,13 +120,21 @@ const STANDARD_DELIVERABLE_EXTRAS = [
     ["Performance Report", "1"],
 ];
 
+const GMB_DELIVERABLE_EXTRAS = [
+    ["Review Response Support", "Included"],
+    ["Google Business Posts", "4"],
+];
+
 // ---------- AI PROMPTS (only for the small variable writing pieces) ----------
 
 const CONTENT_WRITING_RULES = `WRITING RULES (apply to every field you write):
-- Write like an experienced healthcare marketing consultant, not a template. Premium, confident, consultative tone — this should read like a proposal worth the client's investment, not generic filler.
+- Write like an experienced healthcare marketing consultant, not a template. Premium, confident, consultative tone.
 - Short, direct paragraphs (2-3 sentences).
 - NEVER use these phrases: "We are confident", "We recognize the need", "dynamic and competitive", "This service focuses on", "position [client] as a trusted authority", "High-quality visual and video content is crucial"
-- CRITICAL - AVOID REPETITION: core ideas like "increase visibility", "build trust", "patient engagement", and "online presence" must each appear ONLY ONCE across the entire content, in whichever field they matter most. Do not restate the same concept in multiple fields using different words.
+- NEVER make assumptions about the client's market position (e.g. "holds a prominent position", "a leading provider") — hospitals dislike agencies presuming their standing. State what the hospital does, not how important it already is.
+- VOCABULARY VARIETY: do not repeat the word "patient" in every sentence. Rotate between "patient", "audience", "community", "prospective visitors", "healthcare consumers", "target audience", and "local community" so it reads naturally, not repetitively.
+- CRITICAL - AVOID REPETITION: core ideas like "increase visibility", "build trust", "patient engagement", and "online presence" must each appear ONLY ONCE across the entire content, in whichever field they matter most.
+- Avoid technical jargon (e.g. "submit sitemap", "backlinks", "meta tags") — describe the client-facing outcome instead (e.g. "improve website structure for better search visibility").
 - Be specific to the client's name, city, and speciality (if any). No generic filler.
 - Plain text only. No HTML tags, no markdown, no asterisks.`;
 
@@ -124,14 +155,14 @@ Output ONLY a JSON object (no markdown fences, no explanation) with exactly this
   "contentStrategy": [
     { "title": "Theme name", "description": "one short sentence" }
   ],
-  "conclusion": "2-3 sentences, personalised to the client name, emotionally resonant about patient trust and measurable growth — not just 'we look forward to working with you'."
+  "conclusion": "2-3 sentences, focused on the HOSPITAL's outcome (becoming a trusted, recognized healthcare brand) rather than describing the agency's commitment."
 }
 
 Rules for the fields:
-- "understanding": exactly 2 short paragraphs. Paragraph 1: establish the client's current standing and why digital presence matters now for patient acquisition. Paragraph 2: position Atoms' strategy specifically for this client (educational content, community engagement, patient enquiries, reputation).
-- "serviceScope": one entry for social media management (based on reels/posters/shoots), plus one entry per selected add-on that represents a distinct service (SEO, Ads, Website Management). Do not create entries for add-ons that are just extra units (Extra Reel, Extra Poster, Regular Shoot, Premium Shoot). For each entry: "scopeOfWork" = internal activities (content calendar, hashtag research, community management, etc.), "deliverables" = concrete monthly output, "resultsHeading" = "Campaign Objectives" for any ads-related service, otherwise "Benefits", "results" = 3-4 bullets matching that heading.
-- "contentStrategy": 7-8 varied content theme categories (e.g. health tips, doctor spotlight, patient stories, facility tours, preventive care, FAQs, myth vs fact, seasonal awareness, doctor interviews, behind the scenes) relevant to this client's speciality/type. Only include this field if social media platforms were selected.
-- "conclusion": personalised, impactful, no banned phrases, no repeated ideas from earlier fields.`;
+- "understanding": exactly 2 short paragraphs. Paragraph 1: state what the hospital/doctor does and why digital presence matters now for reaching more of the local community. Paragraph 2: position Atoms' strategy for this client (educational content, engagement, enquiries, reputation). Do NOT presume the client already "holds a prominent position" or is "a leading provider."
+- "serviceScope": one entry for social media management (based on reels/posters/shoots) — DO NOT create a separate Google My Business entry, that is handled separately. Plus one entry per selected add-on that represents a distinct service (SEO, Ads, Website Management), excluding Google My Business and excluding add-ons that are just extra units (Extra Reel, Extra Poster, Regular Shoot, Premium Shoot). For each entry: "scopeOfWork" = internal activities, "deliverables" = concrete monthly output including a line about professionally designed creatives aligned with the client's branding, "resultsHeading" = "Campaign Objectives" for ads-related services, otherwise "Benefits", "results" = 3-4 bullets.
+- "contentStrategy": 7-8 varied content theme categories (health tips, doctor spotlight, patient stories, facility tours, preventive care, FAQs, myth vs fact, seasonal awareness, doctor interviews, behind the scenes, Health Awareness Days like World Heart Day / Diabetes Day / Women's Day) relevant to this client. Only include this field if social media platforms were selected.
+- "conclusion": about the hospital's future standing and results, not the agency's dedication.`;
 }
 
 function buildRefinementPrompt(proposalData, currentContent, instruction) {
@@ -150,7 +181,7 @@ ${CONTENT_WRITING_RULES}
 
 CRITICAL: Output the COMPLETE content JSON back, in the exact same shape as the input.
 - Change ONLY what the requested change asks for.
-- Every field/value NOT related to the request must be copied back EXACTLY character-for-character as given — do not reword, shorten, rephrase, or "improve" anything you were not asked to change.
+- Every field/value NOT related to the request must be copied back EXACTLY character-for-character as given.
 - Do not remove or add fields that weren't part of the request.
 - Output ONLY the JSON object, no markdown fences, no explanation.`;
 }
@@ -221,14 +252,12 @@ function renderList(items) {
         .join("")}</ul>`;
 }
 
-function renderCheckList(items) {
-    return `<ul style="list-style:none;margin:0 0 12px 0;padding:0;">${items
-        .map((item) => `<li style="margin-bottom:8px;">✔ ${escapeHtml(item)}</li>`)
-        .join("")}</ul>`;
+function sectionHeading(title) {
+    return `<h2 style="color:#1e3a8a;text-transform:uppercase;letter-spacing:1px;font-size:14px;font-weight:bold;border-bottom:2px solid #1e3a8a;padding-bottom:6px;margin-top:36px;">${escapeHtml(title)}</h2>`;
 }
 
-function sectionHeading(title) {
-    return `<h2 style="color:#1e3a8a;text-transform:uppercase;letter-spacing:1px;font-size:14px;font-weight:bold;border-bottom:2px solid #1e3a8a;padding-bottom:6px;margin-top:32px;">${escapeHtml(title)}</h2>`;
+function subHeading(title) {
+    return `<h3 style="margin-top:16px;margin-bottom:4px;color:#1e3a8a;">${escapeHtml(title)}</h3>`;
 }
 
 function renderTable(headers, rows) {
@@ -248,7 +277,7 @@ function renderProcessFlow(steps) {
     return `<div style="margin-bottom:16px;">${steps
         .map(
             (step, i) =>
-                `<div style="padding:10px 16px;background:#f8fafc;border-left:3px solid #1e3a8a;margin-bottom:${i < steps.length - 1 ? "4px" : "0"};font-weight:600;">${escapeHtml(step)}</div>${i < steps.length - 1 ? `<div style="text-align:center;color:#1e3a8a;font-weight:bold;margin:2px 0;">↓</div>` : ""
+                `<div style="padding:10px 16px;background:#f8fafc;border-left:3px solid #1e3a8a;margin-bottom:${i < steps.length - 1 ? "4px" : "0"};font-weight:600;">${escapeHtml(step)}</div>${i < steps.length - 1 ? `<div style="text-align:center;color:#1e3a8a;font-weight:bold;margin:2px 0;font-size:18px;">⬇</div>` : ""
                 }`
         )
         .join("")}</div>`;
@@ -256,11 +285,7 @@ function renderProcessFlow(steps) {
 
 function renderTimeline(timeline) {
     return timeline
-        .map(
-            (wk) => `
-<h3 style="margin-top:14px;margin-bottom:4px;color:#1e3a8a;">${escapeHtml(wk.week)}</h3>
-${renderList(wk.items)}`
-        )
+        .map((wk) => `${subHeading(wk.week)}${renderList(wk.items)}`)
         .join("");
 }
 
@@ -274,13 +299,19 @@ function buildProposalHtml(proposalData, content) {
     const today = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" });
     const platformList = (platforms || []).join(", ");
     const hasSocial = (reels > 0 || posters > 0);
+    const hasGMB = (platforms || []).includes("Google My Business");
 
     const deliverableRows = [
         ["Reels", String(reels), platformList],
         ["Posters", String(posters), platformList],
         ...(shoots > 0 ? [["Professional Shoot", String(shoots), "On-site (Content for " + platformList + ")"]] : []),
         ...(hasSocial ? STANDARD_DELIVERABLE_EXTRAS.map(([name, qty]) => [name, qty, platformList]) : []),
+        ...(hasGMB ? GMB_DELIVERABLE_EXTRAS.map(([name, qty]) => [name, qty, "Google My Business"]) : []),
     ];
+
+    const reporting = hasGMB
+        ? [...FIXED_REPORTING_BASE.slice(0, -1), "Google Business Profile insights", FIXED_REPORTING_BASE[FIXED_REPORTING_BASE.length - 1]]
+        : FIXED_REPORTING_BASE;
 
     let html = `<!DOCTYPE html>
 <html lang="en">
@@ -309,7 +340,7 @@ ${sectionHeading("Recommended Service Scope")}
 ${(content.serviceScope || [])
             .map(
                 (svc) => `
-<h3 style="margin-top:16px;margin-bottom:4px;">${escapeHtml(svc.name)}</h3>
+${subHeading(svc.name)}
 <div style="font-weight:bold;margin-top:8px;">Scope of Work:</div>
 ${renderList(svc.scopeOfWork || [])}
 <div style="font-weight:bold;">Deliverables:</div>
@@ -319,6 +350,14 @@ ${renderList(svc.results || [])}
 `
             )
             .join("")}
+${hasGMB
+            ? `${subHeading("Google Business Profile Optimization")}
+<div style="font-weight:bold;margin-top:8px;">Scope:</div>
+${renderList(GMB_SCOPE)}
+<div style="font-weight:bold;">Benefits:</div>
+${renderList(GMB_BENEFITS)}`
+            : ""
+        }
 
 ${sectionHeading("Monthly Deliverables")}
 ${renderTable(["Deliverable", "Quantity", "Platform"], deliverableRows)}
@@ -341,7 +380,10 @@ ${renderTable(["Name", "Investment"], addOns.map((a) => [escapeHtml(a.name), for
             : ""
         }
 
-${sectionHeading("Pricing Table")}
+${sectionHeading("Expected Outcomes After 6 Months")}
+${renderTable(["Area", "Expected Outcome"], FIXED_EXPECTED_OUTCOMES)}
+
+${sectionHeading("Investment Summary")}
 ${renderTable(
             ["Item", "Investment"],
             [
@@ -361,13 +403,16 @@ ${renderList(FIXED_CLIENT_RESPONSIBILITIES)}
 
 ${sectionHeading("Reporting & Analytics")}
 <p>Monthly performance reports will include:</p>
-${renderList(FIXED_REPORTING)}
+${renderList(reporting)}
 
 ${sectionHeading("Important Notes")}
 ${renderList(FIXED_IMPORTANT_NOTES)}
 
+${sectionHeading("Terms & Conditions")}
+${renderList(FIXED_TERMS)}
+
 ${sectionHeading("Why Partner With Atoms Digital Solutions")}
-${renderCheckList(FIXED_WHY_ATOMS)}
+${renderList(FIXED_WHY_ATOMS)}
 
 ${sectionHeading("Conclusion")}
 <p>${escapeHtml(content.conclusion || "")}</p>
