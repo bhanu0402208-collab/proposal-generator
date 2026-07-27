@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Send, Plus, FileText, Sparkles, History, X, Download } from "lucide-react";
+import { Send, Plus, FileText, Sparkles, History, X, Download, Mic, Settings } from "lucide-react";
 import "./App.css";
 
 const INITIAL_MESSAGE = {
@@ -25,6 +25,7 @@ function App() {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [proposalData, setProposalData] = useState(null);
   const [proposalHtml, setProposalHtml] = useState(null);
   const [proposalContent, setProposalContent] = useState(null);
@@ -244,6 +245,30 @@ function App() {
     }
   }
 
+  function handleMicClick() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Voice input isn't supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+    if (isRecording) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => setIsRecording(true);
+    recognition.onend = () => setIsRecording(false);
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue((prev) => (prev ? prev + " " + transcript : transcript));
+    };
+
+    recognition.start();
+  }
+
   function handleKeyDown(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -343,9 +368,14 @@ function App() {
           <div className="chat-panel">
             <div className="chat-panel-header">
               <span>Conversation</span>
-              <button className="new-button" onClick={handleNew}>
-                <Plus size={14} /> New
-              </button>
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <button className="settings-button" title="Settings" onClick={() => { }}>
+                  <Settings size={16} />
+                </button>
+                <button className="new-button" onClick={handleNew}>
+                  <Plus size={14} /> New
+                </button>
+              </div>
             </div>
 
             <div className="chat-window" ref={chatWindowRef}>
@@ -389,11 +419,19 @@ function App() {
                   rows={1}
                 />
                 <button
+                  className={`mic-button ${isRecording ? "recording" : ""}`}
+                  onClick={handleMicClick}
+                  title="Voice input"
+                  type="button"
+                >
+                  <Mic size={16} />
+                </button>
+                <button
                   className="send-button"
                   onClick={handleSend}
                   disabled={isLoading || inputValue.trim() === ""}
                 >
-                  <Send size={16} />
+                  <Send size={16} /> Send
                 </button>
               </div>
               <button
@@ -452,20 +490,11 @@ function App() {
                   <strong>"Generate Proposal Preview"</strong> to create your document.
                 </p>
                 <div className="steps">
-                  <div className="step active">
-                    <span className="step-num">1</span>
-                    <span>Chat</span>
-                  </div>
+                  <div className="step-badge active">1. Chat</div>
                   <span className="arrow">→</span>
-                  <div className="step">
-                    <span className="step-num">2</span>
-                    <span>Confirm</span>
-                  </div>
+                  <div className="step-badge">2. Confirm</div>
                   <span className="arrow">→</span>
-                  <div className="step">
-                    <span className="step-num">3</span>
-                    <span>Generate</span>
-                  </div>
+                  <div className="step-badge">3. Generate</div>
                 </div>
               </div>
             )}
